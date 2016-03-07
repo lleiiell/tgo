@@ -1,10 +1,10 @@
-package models
+package model
 
 import (
 	"time"
 )
 
-type IModelMongo interface {
+type IModel interface {
 	InitTime(t time.Time)
 	SetUpdatedTime(t time.Time)
 	SetId(id int64)

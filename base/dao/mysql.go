@@ -1,10 +1,10 @@
-package base
+package dao
 
 import (
-	"configs"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
+	"github.com/tonyjt/tgo/configs"
 	"github.com/tonyjt/tgo/util"
 )
 

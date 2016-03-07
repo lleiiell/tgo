@@ -6,11 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func Redirect(c *gin.Context, code int, msg string) {
-
-}
-
-func ReturnJson(c *gin.Context, code int, msg string, model interface{}) {
+func ResponseReturnJson(c *gin.Context, code int, msg string, model interface{}) {
 
 	var rj interface{}
 

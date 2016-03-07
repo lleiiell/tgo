@@ -1,11 +1,11 @@
-package base
+package dao
 
 import (
-	"configs"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/garyburd/redigo/redis"
+	"github.com/tonyj/tgo/configs"
 	"reflect"
 	"strings"
 	"sync"
@@ -13,7 +13,7 @@ import (
 	"util"
 )
 
-type BaseDaoRedis struct {
+type Redis struct {
 	KeyName string
 }
 
@@ -74,7 +74,7 @@ func InitRedisPool() (redis.Conn, error) {
 	return nil, errors.New("redis pool is null")
 }
 
-func (b *BaseDaoRedis) getKey(key string) string {
+func (b *Redis) getKey(key string) string {
 
 	cacheConfig := configs.GetCacheRedisConfig()
 
@@ -86,7 +86,7 @@ func (b *BaseDaoRedis) getKey(key string) string {
 	return fmt.Sprintf("%s:%s:%s", prefixRedis, b.KeyName, key)
 }
 
-func (b *BaseDaoRedis) Set(key string, value interface{}) bool {
+func (b *Redis) Set(key string, value interface{}) bool {
 
 	redisClient, err := InitRedisPool()
 
@@ -109,7 +109,7 @@ func (b *BaseDaoRedis) Set(key string, value interface{}) bool {
 	return true
 }
 
-func (b *BaseDaoRedis) Get(key string, data interface{}) bool {
+func (b *Redis) Get(key string, data interface{}) bool {
 
 	redisClient, err := InitRedisPool()
 
@@ -149,7 +149,7 @@ func (b *BaseDaoRedis) Get(key string, data interface{}) bool {
 	return true
 }
 
-func (b *BaseDaoRedis) Incr(key string) (interface{}, bool) {
+func (b *Redis) Incr(key string) (interface{}, bool) {
 
 	redisClient, err := InitRedisPool()
 
@@ -170,7 +170,7 @@ func (b *BaseDaoRedis) Incr(key string) (interface{}, bool) {
 }
 
 //hash start
-func (b *BaseDaoRedis) HIncrby(key string, field string, value int) (int, bool) {
+func (b *Redis) HIncrby(key string, field string, value int) (int, bool) {
 
 	redisClient, err := InitRedisPool()
 
@@ -199,7 +199,7 @@ func (b *BaseDaoRedis) HIncrby(key string, field string, value int) (int, bool) 
 	return int(count), true
 }
 
-func (b *BaseDaoRedis) HGet(key string, field string, value interface{}) bool {
+func (b *Redis) HGet(key string, field string, value interface{}) bool {
 
 	redisClient, err := InitRedisPool()
 
@@ -234,7 +234,7 @@ func (b *BaseDaoRedis) HGet(key string, field string, value interface{}) bool {
 	return true
 }
 
-func (b *BaseDaoRedis) HSet(key string, field string, value interface{}) bool {
+func (b *Redis) HSet(key string, field string, value interface{}) bool {
 
 	redisClient, err := InitRedisPool()
 
@@ -256,7 +256,7 @@ func (b *BaseDaoRedis) HSet(key string, field string, value interface{}) bool {
 	}
 	return true
 }
-func (b *BaseDaoRedis) HMSet(key string, datas ...interface{}) bool {
+func (b *Redis) HMSet(key string, datas ...interface{}) bool {
 
 	redisClient, err := InitRedisPool()
 
@@ -274,7 +274,7 @@ func (b *BaseDaoRedis) HMSet(key string, datas ...interface{}) bool {
 	return true
 }
 
-func (b *BaseDaoRedis) HLen(key string, data *int) bool {
+func (b *Redis) HLen(key string, data *int) bool {
 	redisClient, err := InitRedisPool()
 
 	if err != nil {
@@ -302,7 +302,7 @@ func (b *BaseDaoRedis) HLen(key string, data *int) bool {
 	return resultConv
 }
 
-func (b *BaseDaoRedis) HDel(key string, field string) bool {
+func (b *Redis) HDel(key string, field string) bool {
 
 	redisClient, err := InitRedisPool()
 
@@ -327,7 +327,7 @@ func (b *BaseDaoRedis) HDel(key string, field string) bool {
 // hash end
 
 // sorted set start
-func (b *BaseDaoRedis) ZAdd(key string, score int, data interface{}) bool {
+func (b *Redis) ZAdd(key string, score int, data interface{}) bool {
 	redisClient, err := InitRedisPool()
 
 	if err != nil {
@@ -344,7 +344,7 @@ func (b *BaseDaoRedis) ZAdd(key string, score int, data interface{}) bool {
 	}
 	return true
 }
-func (b *BaseDaoRedis) ZGet(key string, sort bool, start int, end int, data interface{}) bool {
+func (b *Redis) ZGet(key string, sort bool, start int, end int, data interface{}) bool {
 	redisClient, err := InitRedisPool()
 
 	if err != nil {
@@ -382,7 +382,7 @@ func (b *BaseDaoRedis) ZGet(key string, sort bool, start int, end int, data inte
 
 //list start
 
-func (b *BaseDaoRedis) LRange(key string, start int, end int, data interface{}) bool {
+func (b *Redis) LRange(key string, start int, end int, data interface{}) bool {
 	redisClient, err := InitRedisPool()
 
 	if err != nil {
@@ -411,7 +411,7 @@ func (b *BaseDaoRedis) LRange(key string, start int, end int, data interface{}) 
 	return true
 }
 
-func (b *BaseDaoRedis) LREM(key string, count int, data interface{}) int {
+func (b *Redis) LREM(key string, count int, data interface{}) int {
 	redisClient, err := InitRedisPool()
 
 	if err != nil {
@@ -437,14 +437,14 @@ func (b *BaseDaoRedis) LREM(key string, count int, data interface{}) int {
 	return countRem
 }
 
-func (b *BaseDaoRedis) RPush(value interface{}) bool {
+func (b *Redis) RPush(value interface{}) bool {
 	return b.Push(value, false)
 }
-func (b *BaseDaoRedis) LPush(value interface{}) bool {
+func (b *Redis) LPush(value interface{}) bool {
 	return b.Push(value, true)
 }
 
-func (b *BaseDaoRedis) Push(value interface{}, isLeft bool) bool {
+func (b *Redis) Push(value interface{}, isLeft bool) bool {
 
 	var cmd string
 	if isLeft {
@@ -458,15 +458,15 @@ func (b *BaseDaoRedis) Push(value interface{}, isLeft bool) bool {
 	return b.DoSet(cmd, key, value)
 }
 
-func (b *BaseDaoRedis) RPop(value interface{}) bool {
+func (b *Redis) RPop(value interface{}) bool {
 	return b.Pop(value, false)
 }
 
-func (b *BaseDaoRedis) LPop(value interface{}) bool {
+func (b *Redis) LPop(value interface{}) bool {
 	return b.Pop(value, true)
 }
 
-func (b *BaseDaoRedis) Pop(value interface{}, isLeft bool) bool {
+func (b *Redis) Pop(value interface{}, isLeft bool) bool {
 
 	var cmd string
 	if isLeft {
@@ -478,7 +478,7 @@ func (b *BaseDaoRedis) Pop(value interface{}, isLeft bool) bool {
 
 	return b.DoGet(cmd, key, value)
 }
-func (b *BaseDaoRedis) DoSet(cmd string, key string, value interface{}) bool {
+func (b *Redis) DoSet(cmd string, key string, value interface{}) bool {
 
 	redisClient, err := InitRedisPool()
 
@@ -503,7 +503,7 @@ func (b *BaseDaoRedis) DoSet(cmd string, key string, value interface{}) bool {
 	}
 	return true
 }
-func (b *BaseDaoRedis) DoGet(cmd string, key string, value interface{}) bool {
+func (b *Redis) DoGet(cmd string, key string, value interface{}) bool {
 
 	redisClient, err := InitRedisPool()
 
