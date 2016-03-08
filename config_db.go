@@ -8,19 +8,19 @@ import (
 
 var (
 	dbConfigMux sync.Mutex
-	dbConfig    *DbConfig
+	dbConfig    *ConfigDb
 )
 
-type DbConfig struct {
-	Mysql MysqlConfig
-	Mongo MongoConfig
+type ConfigDb struct {
+	Mysql ConfigMysql
+	Mongo ConfigMongo
 }
 
-func NewConfigDb() *DbConfig {
-	return &DbConfig{}
+func NewConfigDb() *ConfigDb {
+	return &ConfigDb{}
 }
 
-type DbBaseConfig struct {
+type ConfigDbBase struct {
 	Address  string
 	Port     int
 	User     string
@@ -28,20 +28,20 @@ type DbBaseConfig struct {
 	DbName   string `json:"-"`
 }
 
-type MysqlConfig struct {
+type ConfigMysql struct {
 	DbName string
-	Write  DbBaseConfig
-	Reads  []DbBaseConfig
+	Write  ConfigDbBase
+	Reads  []ConfigDbBase
 }
 
-type MongoConfig struct {
+type ConfigMongo struct {
 	DbName      string
 	Servers     string
 	Read_option string
 	Timeout     int
 }
 
-func getDbConfigs() {
+func configDbInit() {
 
 	if dbConfig == nil || dbConfig.Mysql.DbName == "" {
 
@@ -49,48 +49,48 @@ func getDbConfigs() {
 
 		defer dbConfigMux.Unlock()
 
-		dbConfig = &DbConfig{}
+		dbConfig = &ConfigDb{}
 
-		defaultDbConfig := getDefaultDbConfig()
+		defaultDbConfig := configDbGetDefault()
 
-		getConfigs("db", dbConfig, defaultDbConfig)
+		configGet("db", dbConfig, defaultDbConfig)
 
 	}
 }
 
-func getDefaultDbConfig() *DbConfig {
-	return &DbConfig{Mysql: MysqlConfig{Write: DbBaseConfig{"172.172.177.15", 33062, "root", "root@dev", ""},
-		Reads: []DbBaseConfig{DbBaseConfig{"172.172.177.15", 33062, "root", "root@dev", ""},
-			DbBaseConfig{"172.172.177.15", 33062, "root", "root@dev", ""}}},
-		Mongo: MongoConfig{DbName: "Component", Servers: "172.172.177.20:36004", Read_option: "PRIMARY", Timeout: 1000}}
+func configDbGetDefault() *ConfigDb {
+	return &ConfigDb{Mysql: ConfigMysql{Write: ConfigDbBase{"172.172.177.15", 33062, "root", "root@dev", ""},
+		Reads: []ConfigDbBase{ConfigDbBase{"172.172.177.15", 33062, "root", "root@dev", ""},
+			ConfigDbBase{"172.172.177.15", 33062, "root", "root@dev", ""}}},
+		Mongo: ConfigMongo{DbName: "Component", Servers: "172.172.177.20:36004", Read_option: "PRIMARY", Timeout: 1000}}
 }
 
-func NewMysqlConfig() *MysqlConfig {
-	return &MysqlConfig{}
+func NewConfigMysql() *ConfigMysql {
+	return &ConfigMysql{}
 }
 
-func (m *MysqlConfig) GetMysqlWriteConfig() *DbBaseConfig {
+func (m *ConfigMysql) GetWrite() *ConfigDbBase {
 
-	getDbConfigs()
+	configDbInit()
 
 	writeConfig := dbConfig.Mysql.Write
 
 	if &writeConfig == nil {
 
-		writeConfig = getDefaultDbConfig().Mysql.Write
+		writeConfig = configDbGetDefault().Mysql.Write
 	}
 	writeConfig.DbName = dbConfig.Mysql.DbName
 
 	return &writeConfig
 }
 
-func (m *MysqlConfig) GetMysqlReadConfig() (config *DbBaseConfig) {
-	getDbConfigs()
+func (m *ConfigMysql) GetRead() (config *ConfigDbBase) {
+	configDbInit()
 
 	readConfigs := dbConfig.Mysql.Reads
 
 	if &readConfigs == nil || len(readConfigs) == 0 {
-		return &getDefaultDbConfig().Mysql.Reads[0]
+		return &configDbGetDefault().Mysql.Reads[0]
 	}
 	count := len(readConfigs)
 
@@ -105,13 +105,13 @@ func (m *MysqlConfig) GetMysqlReadConfig() (config *DbBaseConfig) {
 	return config
 }
 
-func (m *MongoConfig) GetMongoConfig() (config *MongoConfig) {
-	getDbConfigs()
+func (m *ConfigMongo) Get() (config *ConfigMongo) {
+	configDbInit()
 
 	mongoConfig := dbConfig.Mongo
 
 	if mongoConfig.DbName == "" {
-		mongoConfig = getDefaultDbConfig().Mongo
+		mongoConfig = configDbGetDefault().Mongo
 	}
 	return &mongoConfig
 }

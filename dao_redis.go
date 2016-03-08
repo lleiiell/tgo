@@ -22,13 +22,13 @@ var (
 
 func InitRedis() (redis.Conn, error) {
 
-	cacheConfig := configs.GetCacheRedisConfig()
+	cacheConfig := ConfigCacheGetRedis()
 
 	conn, err := redis.DialTimeout("tcp", fmt.Sprintf("%s:%d", cacheConfig.Address, cacheConfig.Port), time.Duration(cacheConfig.ConnectTimeout)*time.Millisecond, time.Duration(cacheConfig.ReadTimeout)*time.Millisecond, time.Duration(cacheConfig.WriteTimeout)*time.Millisecond)
 
 	if err != nil {
 
-		util.LogErrorf("open redis error: %s", err.Error())
+		UtilLogErrorf("open redis error: %s", err.Error())
 
 	}
 
@@ -43,7 +43,7 @@ func InitRedisPool() (redis.Conn, error) {
 
 		defer redisPoolMux.Unlock()
 
-		cacheConfig := configs.GetCacheRedisConfig()
+		cacheConfig := ConfigCacheGetRedis()
 
 		address := fmt.Sprintf("%s:%d", cacheConfig.Address, cacheConfig.Port)
 
@@ -55,7 +55,7 @@ func InitRedisPool() (redis.Conn, error) {
 			Dial: func() (redis.Conn, error) {
 				c, err := redis.Dial("tcp", address)
 				if err != nil {
-					util.LogErrorf("open redis pool error: %s", err.Error())
+					UtilLogErrorf("open redis pool error: %s", err.Error())
 
 					return nil, err
 				}
@@ -67,14 +67,14 @@ func InitRedisPool() (redis.Conn, error) {
 		return pool.Get(), nil
 	}
 
-	util.LogError("redis pool is null")
+	UtilLogError("redis pool is null")
 
 	return nil, errors.New("redis pool is null")
 }
 
 func (b *DaoRedis) getKey(key string) string {
 
-	cacheConfig := configs.GetCacheRedisConfig()
+	cacheConfig := ConfigCacheGetRedis()
 
 	prefixRedis := cacheConfig.Prefix
 
@@ -95,13 +95,13 @@ func (b *DaoRedis) Set(key string, value interface{}) bool {
 	data, errJson := json.Marshal(value)
 
 	if errJson != nil {
-		util.LogErrorf("redis Set marshal data to json:%s", errJson.Error())
+		UtilLogErrorf("redis Set marshal data to json:%s", errJson.Error())
 		return false
 	}
 	_, errDo := redisClient.Do("SET", b.getKey(key), data)
 
 	if errDo != nil {
-		util.LogErrorf("run redis command Set failed:%s", errDo.Error())
+		UtilLogErrorf("run redis command Set failed:%s", errDo.Error())
 		return false
 	}
 	return true
@@ -119,7 +119,7 @@ func (b *DaoRedis) Get(key string, data interface{}) bool {
 	result, errDo := redisClient.Do("GET", b.getKey(key))
 
 	if errDo != nil {
-		util.LogErrorf("run redis command GET failed:%s", errDo.Error())
+		UtilLogErrorf("run redis command GET failed:%s", errDo.Error())
 		return false
 	}
 	if result == nil {
@@ -141,7 +141,7 @@ func (b *DaoRedis) Get(key string, data interface{}) bool {
 	errorJson := json.Unmarshal(result.([]byte), data)
 
 	if errorJson != nil {
-		util.LogErrorf("redis GET data  unmarshal failed:%s", errorJson.Error())
+		UtilLogErrorf("redis GET data  unmarshal failed:%s", errorJson.Error())
 		return false
 	}
 	return true
@@ -160,7 +160,7 @@ func (b *DaoRedis) Incr(key string) (interface{}, bool) {
 	data, errDo := redisClient.Do("INCR", b.getKey(key))
 
 	if errDo != nil {
-		util.LogErrorf("run redis INCR command failed:%s", errDo.Error())
+		UtilLogErrorf("run redis INCR command failed:%s", errDo.Error())
 
 		return 0, false
 	}
@@ -181,7 +181,7 @@ func (b *DaoRedis) HIncrby(key string, field string, value int) (int, bool) {
 	data, errDo := redisClient.Do("HINCRBY", b.getKey(key), field, value)
 
 	if errDo != nil {
-		util.LogErrorf("run redis HINCRBY command failed:%s", errDo.Error())
+		UtilLogErrorf("run redis HINCRBY command failed:%s", errDo.Error())
 
 		return 0, false
 	}
@@ -190,7 +190,7 @@ func (b *DaoRedis) HIncrby(key string, field string, value int) (int, bool) {
 
 	if !result {
 
-		util.LogErrorf("get HINCRBY command result failed:%v ,is %v", data, reflect.TypeOf(data))
+		UtilLogErrorf("get HINCRBY command result failed:%v ,is %v", data, reflect.TypeOf(data))
 
 		return 0, false
 	}
@@ -210,7 +210,7 @@ func (b *DaoRedis) HGet(key string, field string, value interface{}) bool {
 	result, errDo := redisClient.Do("HGet", b.getKey(key), field)
 
 	if errDo != nil {
-		util.LogErrorf("run redis HGet command failed:%s", errDo.Error())
+		UtilLogErrorf("run redis HGet command failed:%s", errDo.Error())
 
 		return false
 	}
@@ -224,7 +224,7 @@ func (b *DaoRedis) HGet(key string, field string, value interface{}) bool {
 
 	if errorJson != nil {
 
-		util.LogErrorf("get HGet command result failed:%s", errorJson.Error())
+		UtilLogErrorf("get HGet command result failed:%s", errorJson.Error())
 
 		return false
 	}
@@ -243,13 +243,13 @@ func (b *DaoRedis) HSet(key string, field string, value interface{}) bool {
 	data, errJson := json.Marshal(value)
 
 	if errJson != nil {
-		util.LogErrorf("redis HSET marshal data to json:%s", errJson.Error())
+		UtilLogErrorf("redis HSET marshal data to json:%s", errJson.Error())
 		return false
 	}
 	_, errDo := redisClient.Do("HSET", b.getKey(key), field, data)
 
 	if errDo != nil {
-		util.LogErrorf("run redis HSET command failed:%s", errDo.Error())
+		UtilLogErrorf("run redis HSET command failed:%s", errDo.Error())
 		return false
 	}
 	return true
@@ -266,7 +266,7 @@ func (b *DaoRedis) HMSet(key string, datas ...interface{}) bool {
 	_, errDo := redisClient.Do("HMSET", b.getKey(key), datas)
 
 	if errDo != nil {
-		util.LogErrorf("run redis HMSET command failed:%s", errDo.Error())
+		UtilLogErrorf("run redis HMSET command failed:%s", errDo.Error())
 		return false
 	}
 	return true
@@ -284,14 +284,14 @@ func (b *DaoRedis) HLen(key string, data *int) bool {
 	resultData, errDo := redisClient.Do("HLEN", key)
 
 	if errDo != nil {
-		util.LogErrorf("run redis ZADD command failed:%s", errDo.Error())
+		UtilLogErrorf("run redis ZADD command failed:%s", errDo.Error())
 		return false
 	}
 
 	lenth, resultConv := resultData.(int)
 
 	if !resultConv {
-		util.LogErrorf("redis data convert to int failed:%v", resultConv)
+		UtilLogErrorf("redis data convert to int failed:%v", resultConv)
 
 	}
 
@@ -314,7 +314,7 @@ func (b *DaoRedis) HDel(key string, field string) bool {
 
 	if errDo != nil {
 
-		util.LogErrorf("run redis HDel command failed:%s", errDo.Error())
+		UtilLogErrorf("run redis HDel command failed:%s", errDo.Error())
 
 		return false
 	}
@@ -337,7 +337,7 @@ func (b *DaoRedis) ZAdd(key string, score int, data interface{}) bool {
 	_, errDo := redisClient.Do("ZADD", key, score, data)
 
 	if errDo != nil {
-		util.LogErrorf("run redis ZADD command failed:%s", errDo.Error())
+		UtilLogErrorf("run redis ZADD command failed:%s", errDo.Error())
 		return false
 	}
 	return true
@@ -361,7 +361,7 @@ func (b *DaoRedis) ZGet(key string, sort bool, start int, end int, data interfac
 	result, errDo := redisClient.Do(command, key, start, end)
 
 	if errDo != nil {
-		util.LogErrorf("run redis command ZREVRANGE failed:%s", errDo.Error())
+		UtilLogErrorf("run redis command ZREVRANGE failed:%s", errDo.Error())
 		return false
 	}
 
@@ -372,7 +372,7 @@ func (b *DaoRedis) ZGet(key string, sort bool, start int, end int, data interfac
 	errorJson := json.Unmarshal(result.([]byte), data)
 
 	if errorJson != nil {
-		util.LogErrorf("redis data unmarshal failed:%s", errorJson.Error())
+		UtilLogErrorf("redis data unmarshal failed:%s", errorJson.Error())
 		return false
 	}
 	return true
@@ -392,7 +392,7 @@ func (b *DaoRedis) LRange(key string, start int, end int, data interface{}) bool
 	result, errDo := redisClient.Do("LRANGE", key, start, end)
 
 	if errDo != nil {
-		util.LogErrorf("run redis command LRANGE failed:%s", errDo.Error())
+		UtilLogErrorf("run redis command LRANGE failed:%s", errDo.Error())
 		return false
 	}
 
@@ -403,7 +403,7 @@ func (b *DaoRedis) LRange(key string, start int, end int, data interface{}) bool
 	errorJson := json.Unmarshal(result.([]byte), data)
 
 	if errorJson != nil {
-		util.LogErrorf("redis data unmarshal failed:%s", errorJson.Error())
+		UtilLogErrorf("redis data unmarshal failed:%s", errorJson.Error())
 		return false
 	}
 	return true
@@ -421,14 +421,14 @@ func (b *DaoRedis) LREM(key string, count int, data interface{}) int {
 	result, errDo := redisClient.Do("LREM", key, count, data)
 
 	if errDo != nil {
-		util.LogErrorf("run redis command LREM failed:%s", errDo.Error())
+		UtilLogErrorf("run redis command LREM failed:%s", errDo.Error())
 		return 0
 	}
 
 	countRem, ok := result.(int)
 
 	if !ok {
-		util.LogErrorf("redis data convert to int failed:%v", result)
+		UtilLogErrorf("redis data convert to int failed:%v", result)
 		return 0
 	}
 
@@ -489,14 +489,14 @@ func (b *DaoRedis) DoSet(cmd string, key string, value interface{}) bool {
 	data, errJson := json.Marshal(value)
 
 	if errJson != nil {
-		util.LogErrorf("redis %s marshal data to json:%s", cmd, errJson.Error())
+		UtilLogErrorf("redis %s marshal data to json:%s", cmd, errJson.Error())
 		return false
 	}
 
 	_, errDo := redisClient.Do(cmd, key, data)
 
 	if errDo != nil {
-		util.LogErrorf("run redis command %s failed:%s", cmd, errDo.Error())
+		UtilLogErrorf("run redis command %s failed:%s", cmd, errDo.Error())
 		return false
 	}
 	return true
@@ -515,7 +515,7 @@ func (b *DaoRedis) DoGet(cmd string, key string, value interface{}) bool {
 
 	if errDo != nil {
 
-		util.LogErrorf("run redis %s command failed:%s", cmd, errDo.Error())
+		UtilLogErrorf("run redis %s command failed:%s", cmd, errDo.Error())
 
 		return false
 	}
@@ -529,7 +529,7 @@ func (b *DaoRedis) DoGet(cmd string, key string, value interface{}) bool {
 
 	if errorJson != nil {
 
-		util.LogErrorf("get %s command result failed:%s", cmd, errorJson.Error())
+		UtilLogErrorf("get %s command result failed:%s", cmd, errorJson.Error())
 
 		return false
 	}

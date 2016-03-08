@@ -7,14 +7,14 @@ import (
 var (
 	cacheConfigMux sync.Mutex
 
-	cacheConfig *CacheConfig
+	cacheConfig *ConfigCache
 )
 
-type CacheConfig struct {
-	Redis CacheRedisConfig
+type ConfigCache struct {
+	Redis ConfigCacheRedis
 }
 
-type CacheRedisConfig struct {
+type ConfigCacheRedis struct {
 	Address         string
 	Port            int
 	Prefix          string
@@ -26,7 +26,7 @@ type CacheRedisConfig struct {
 	PoolIdleTimeout int
 }
 
-func getCacheConfigs() {
+func configConfigGet() {
 
 	if cacheConfig == nil || cacheConfig.Redis.Address == "" {
 
@@ -34,27 +34,27 @@ func getCacheConfigs() {
 
 		defer cacheConfigMux.Unlock()
 
-		cacheConfig = &CacheConfig{}
+		cacheConfig = &ConfigCache{}
 
-		defaultCacheConfig := getDefaultCacheConfig()
+		defaultCacheConfig := configCacheGetDefault()
 
-		getConfigs("cache", cacheConfig, defaultCacheConfig)
+		configGet("cache", cacheConfig, defaultCacheConfig)
 	}
 }
 
-func getDefaultCacheConfig() *CacheConfig {
-	return &CacheConfig{Redis: CacheRedisConfig{"172.172.177.15", 33062, "component", 1000, 1000, 1000, 10, 100, 180000}}
+func configCacheGetDefault() *ConfigCache {
+	return &ConfigCache{Redis: ConfigCacheRedis{"172.172.177.15", 33062, "component", 1000, 1000, 1000, 10, 100, 180000}}
 }
 
-func GetCacheRedisConfig() *CacheRedisConfig {
+func ConfigCacheGetRedis() *ConfigCacheRedis {
 
-	getCacheConfigs()
+	configConfigGet()
 
 	redisConfig := cacheConfig.Redis
 
 	if &redisConfig == nil {
 		//log
-		redisConfig = getDefaultCacheConfig().Redis
+		redisConfig = configCacheGetDefault().Redis
 	}
 
 	return &redisConfig

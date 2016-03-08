@@ -20,13 +20,13 @@ func UtilResponseReturnJson(c *gin.Context, code int, msg string, model interfac
 
 	callback := c.Query("callback")
 
-	if IsEmpty(callback) {
+	if UtilIsEmpty(callback) {
 
 		c.JSON(200, rj)
 	} else {
 		b, err := json.Marshal(rj)
 		if err != nil {
-			LogErrorf("jsonp marshal error:%s", err.Error())
+			UtilLogErrorf("jsonp marshal error:%s", err.Error())
 		} else {
 			c.String(200, "%s(%s)", callback, string(b))
 		}
@@ -35,9 +35,9 @@ func UtilResponseReturnJson(c *gin.Context, code int, msg string, model interfac
 
 func UtilResponseReturnJsonFailed(c *gin.Context, code int, message string) {
 
-	ResponseReturnJson(c, code, message, nil)
+	UtilResponseReturnJson(c, code, message, nil)
 }
 
 func UtilResponseReturnJsonSuccess(c *gin.Context, data interface{}) {
-	ResponseReturnJson(c, 0, "", data)
+	UtilResponseReturnJson(c, 0, "", data)
 }

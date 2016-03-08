@@ -6,13 +6,13 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-type Mysql struct {
+type DaoMysql struct {
 	TableName string
 }
 
-func NewDaoMysql() *Mysql {
+func NewDaoMysql() *DaoMysql {
 
-	return &Mysql{}
+	return &DaoMysql{}
 }
 
 type Condition struct {
@@ -26,15 +26,15 @@ type Sort struct {
 	Asc   bool
 }
 
-func initMysql(isRead bool) (gorm.DB, error) {
+func initMysql(isRead bool) (*gorm.DB, error) {
 
-	config := configs.NewDb()
+	config := NewConfigDb()
 
-	var dbConfig *configs.DbBaseConfig
+	var dbConfig *ConfigDbBase
 	if isRead {
-		dbConfig = config.Mysql.GetMysqlReadConfig()
+		dbConfig = config.Mysql.GetRead()
 	} else {
-		dbConfig = config.Mysql.GetMysqlWriteConfig()
+		dbConfig = config.Mysql.GetWrite()
 	}
 	//user:password@tcp(172.172.177.15:3306)dbname?charset=utf8
 	connectionString := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8&parseTime=True&loc=Local", dbConfig.User, dbConfig.Password, dbConfig.Address, dbConfig.Port, dbConfig.DbName)
@@ -45,38 +45,38 @@ func initMysql(isRead bool) (gorm.DB, error) {
 	if err != nil {
 		//记录
 		//errors.New("connect mysql error:" + err.Error())
-		util.LogError(fmt.Sprintf("connect mysql error:%s", err.Error()))
+		UtilLogError(fmt.Sprintf("connect mysql error:%s", err.Error()))
 	}
 	db.SingularTable(true)
 
-	if configs.IsEnvDev() {
+	if ConfigEnvIsDev() {
 		db.LogMode(true)
 	}
 
 	return db, err
 }
 
-func (d *Mysql) GetReadOrm() (gorm.DB, error) {
+func (d *DaoMysql) GetReadOrm() (*gorm.DB, error) {
 	return d.getOrm(true)
 }
 
-func (d *Mysql) GetWriteOrm() (gorm.DB, error) {
+func (d *DaoMysql) GetWriteOrm() (*gorm.DB, error) {
 	return d.getOrm(false)
 }
 
-func (d *Mysql) getOrm(isRead bool) (gorm.DB, error) {
+func (d *DaoMysql) getOrm(isRead bool) (*gorm.DB, error) {
 	db, err := initMysql(isRead)
 
 	if err != nil {
 		return db, err
 	}
 	if d.TableName != "" {
-		return *db.Table(d.TableName), nil
+		return db.Table(d.TableName), nil
 	}
 	return db, err
 }
 
-func (d *Mysql) Insert(model interface{}) error {
+func (d *DaoMysql) Insert(model interface{}) error {
 	orm, err := d.GetWriteOrm()
 
 	if err != nil {
@@ -91,13 +91,13 @@ func (d *Mysql) Insert(model interface{}) error {
 	if errInsert != nil {
 		//记录
 		//errors.New("connect mysql error:" + err.Error())
-		util.LogError(fmt.Sprintf("insert data error:%s", errInsert.Error()))
+		UtilLogError(fmt.Sprintf("insert data error:%s", errInsert.Error()))
 	}
 
 	return errInsert
 }
 
-func (d *Mysql) Select(condition string, data interface{}) error {
+func (d *DaoMysql) Select(condition string, data interface{}) error {
 
 	orm, err := d.GetReadOrm()
 
@@ -110,7 +110,7 @@ func (d *Mysql) Select(condition string, data interface{}) error {
 	errFind := orm.Where(condition).Find(&data).Error
 
 	if errFind != nil {
-		util.LogError(fmt.Sprintf("mysql select table %s error:%s", d.TableName, errFind.Error()))
+		UtilLogError(fmt.Sprintf("mysql select table %s error:%s", d.TableName, errFind.Error()))
 		return errFind
 	}
 

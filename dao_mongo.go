@@ -31,7 +31,7 @@ func (m *DaoMongo) getSession() (*mgo.Session, string, error) {
 
 	config := NewConfigDb()
 
-	configMongo := config.Mongo.GetMongoConfig()
+	configMongo := config.Mongo.Get()
 
 	if configMongo == nil || configMongo.Servers == "" || configMongo.DbName == "" {
 		return nil, "", errors.New("config error")

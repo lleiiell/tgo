@@ -11,7 +11,7 @@ func UtilIsEmpty(data string) bool {
 
 func UtilGetStringFromIntArray(data []int, sep string) string {
 
-	dataStr := GetStringArrayFromIntArray(data)
+	dataStr := UtilGetStringArrayFromIntArray(data)
 
 	return strings.Join(dataStr, sep)
 
@@ -19,7 +19,7 @@ func UtilGetStringFromIntArray(data []int, sep string) string {
 
 func UtilGetStringFromInt64Array(data []int64, sep string) string {
 
-	dataStr := GetStringArrayFromInt64Array(data)
+	dataStr := UtilGetStringArrayFromInt64Array(data)
 
 	return strings.Join(dataStr, sep)
 

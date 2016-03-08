@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 )
 
-func getConfigs(name string, data interface{}, defaultData interface{}) {
+func configGet(name string, data interface{}, defaultData interface{}) {
 
 	//mux.Lock()
 

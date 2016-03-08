@@ -6,36 +6,36 @@ import (
 )
 
 var (
-	codeConfig    *CodeList
+	codeConfig    *ConfigCodeList
 	codeConfigMux sync.Mutex
 )
 
-type CodeList struct {
+type ConfigCodeList struct {
 	Codes map[string]string
 }
 
-func getCodeConfigs() {
+func configCodeInit() {
 	if codeConfig == nil || len(codeConfig.Codes) == 0 {
 
 		codeConfigMux.Lock()
 
 		defer codeConfigMux.Unlock()
 
-		codeConfig = &CodeList{}
+		codeConfig = &ConfigCodeList{}
 
-		defaultData := getDefaultCodeConfig()
+		defaultData := configCodeGetDefault()
 
-		getConfigs("code", codeConfig, defaultData)
+		configGet("code", codeConfig, defaultData)
 	}
 }
 
-func getDefaultCodeConfig() *CodeList {
-	return &CodeList{Codes: map[string]string{"0": "success"}}
+func configCodeGetDefault() *ConfigCodeList {
+	return &ConfigCodeList{Codes: map[string]string{"0": "success"}}
 }
 
-func GetCodeMessage(code int) string {
+func ConfigCodeGetMessage(code int) string {
 
-	getCodeConfigs()
+	configCodeInit()
 
 	msg, exists := codeConfig.Codes[strconv.Itoa(code)]
 
