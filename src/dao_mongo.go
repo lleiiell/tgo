@@ -1,18 +1,15 @@
-package dao
+package tgo
 
 import (
 	"errors"
 	"fmt"
-	"github.com/tonyjt/tgo/base/model"
-	"github.com/tonyjt/tgo/configs"
-	"github.com/tonyjt/tgo/util"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"strings"
 	"time"
 )
 
-type Mongo struct {
+type DaoMongo struct {
 	CollectionName string
 
 	AutoIncrementId bool
@@ -20,17 +17,17 @@ type Mongo struct {
 	PrimaryKey string
 }
 
-type MongoCounter struct {
+type DaoMongoCounter struct {
 	Id  string `bson:"_id,omitempty"`
 	Seq int64  `bson:"seq,omitempty"`
 }
 
-func NewDaoMongo() *Mongo {
+func NewDaoMongo() *DaoMongo {
 
-	return &Mongo{}
+	return &DaoMongo{}
 }
 
-func (m *Mongo) getSession() (*mgo.Session, string, error) {
+func (m *DaoMongo) getSession() (*mgo.Session, string, error) {
 
 	config := configs.NewDb()
 
@@ -67,7 +64,7 @@ func (m *Mongo) getSession() (*mgo.Session, string, error) {
 	return session, configMongo.DbName, err
 }
 
-func (m *Mongo) GetNextSequence() (int64, error) {
+func (m *DaoMongo) GetNextSequence() (int64, error) {
 
 	session, dbName, err := m.getSession()
 
@@ -105,7 +102,7 @@ func (m *Mongo) GetNextSequence() (int64, error) {
 
 	return seq, nil
 }
-func (m *Mongo) GetById(id int64, data interface{}) error {
+func (m *DaoMongo) GetById(id int64, data interface{}) error {
 	session, dbName, err := m.getSession()
 
 	if err != nil {
@@ -122,7 +119,7 @@ func (m *Mongo) GetById(id int64, data interface{}) error {
 
 	return errFind
 }
-func (m *Mongo) Insert(data models.IModelMongo) error {
+func (m *DaoMongo) Insert(data IModelMongo) error {
 
 	if m.AutoIncrementId {
 
@@ -157,7 +154,7 @@ func (m *Mongo) Insert(data models.IModelMongo) error {
 	return nil
 }
 
-func (m *Mongo) InsertM(data []models.IModelMongo) error {
+func (m *DaoMongo) InsertM(data []IModelMongo) error {
 
 	for _, item := range data {
 		if m.AutoIncrementId {
@@ -199,7 +196,7 @@ func (m *Mongo) InsertM(data []models.IModelMongo) error {
 	return nil
 }
 
-func (m *Mongo) Count(condition interface{}) (int, error) {
+func (m *DaoMongo) Count(condition interface{}) (int, error) {
 
 	session, dbName, err := m.getSession()
 
@@ -219,7 +216,7 @@ func (m *Mongo) Count(condition interface{}) (int, error) {
 	return count, errCount
 }
 
-func (m *Mongo) Find(condition interface{}, limit int, skip int, data interface{}, sortFields ...string) error {
+func (m *DaoMongo) Find(condition interface{}, limit int, skip int, data interface{}, sortFields ...string) error {
 
 	session, dbName, err := m.getSession()
 
@@ -254,7 +251,7 @@ func (m *Mongo) Find(condition interface{}, limit int, skip int, data interface{
 	return errSelect
 }
 
-func (m *Mongo) Distinct(condition interface{}, field string, data interface{}) error {
+func (m *DaoMongo) Distinct(condition interface{}, field string, data interface{}) error {
 
 	session, dbName, err := m.getSession()
 
@@ -275,7 +272,7 @@ func (m *Mongo) Distinct(condition interface{}, field string, data interface{}) 
 	return errDistinct
 }
 
-func (m *Mongo) Sum(condition interface{}, sumField string) (int, error) {
+func (m *DaoMongo) Sum(condition interface{}, sumField string) (int, error) {
 	session, dbName, err := m.getSession()
 
 	if err != nil {
@@ -308,7 +305,7 @@ func (m *Mongo) Sum(condition interface{}, sumField string) (int, error) {
 	return result.Sum, nil
 }
 
-func (m *Mongo) DistinctCount(condition interface{}, field string) (int, error) {
+func (m *DaoMongo) DistinctCount(condition interface{}, field string) (int, error) {
 	session, dbName, err := m.getSession()
 
 	if err != nil {
@@ -340,7 +337,7 @@ func (m *Mongo) DistinctCount(condition interface{}, field string) (int, error) 
 	return result.Count, nil
 }
 
-func (m *Mongo) Update(condition interface{}, data map[string]interface{}) error {
+func (m *DaoMongo) Update(condition interface{}, data map[string]interface{}) error {
 	session, dbName, err := m.getSession()
 
 	if err != nil {

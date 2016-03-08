@@ -1,4 +1,4 @@
-package util
+package tgo
 
 import (
 	"encoding/json"
@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func ResponseReturnJson(c *gin.Context, code int, msg string, model interface{}) {
+func UtilResponseReturnJson(c *gin.Context, code int, msg string, model interface{}) {
 
 	var rj interface{}
 
@@ -33,11 +33,11 @@ func ResponseReturnJson(c *gin.Context, code int, msg string, model interface{})
 	}
 }
 
-func ReturnJsonFailed(c *gin.Context, code int, message string) {
+func UtilResponseReturnJsonFailed(c *gin.Context, code int, message string) {
 
-	ReturnJson(c, code, message, nil)
+	ResponseReturnJson(c, code, message, nil)
 }
 
-func ReturnJsonSuccess(c *gin.Context, data interface{}) {
-	ReturnJson(c, 0, "", data)
+func UtilResponseReturnJsonSuccess(c *gin.Context, data interface{}) {
+	ResponseReturnJson(c, 0, "", data)
 }

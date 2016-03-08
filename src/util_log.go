@@ -1,4 +1,4 @@
-package util
+package tgo
 
 import (
 	"fmt"
@@ -29,7 +29,7 @@ func initLog() {
 		}
 	}
 }
-func LogError(msg interface{}) {
+func UtilLogError(msg interface{}) {
 
 	initLog()
 
@@ -39,7 +39,7 @@ func LogError(msg interface{}) {
 
 }
 
-func LogErrorf(format string, a ...interface{}) {
+func UtilLogErrorf(format string, a ...interface{}) {
 
 	msg := fmt.Sprintf(format, a...)
 
@@ -51,7 +51,7 @@ func LogErrorf(format string, a ...interface{}) {
 
 }
 
-func LogInfo(msg interface{}) {
+func UtilLogInfo(msg interface{}) {
 
 	initLog()
 
@@ -60,7 +60,7 @@ func LogInfo(msg interface{}) {
 	l4g.Info(msg)
 
 }
-func LogInfof(format string, a ...interface{}) {
+func UtilLogInfof(format string, a ...interface{}) {
 
 	msg := fmt.Sprintf(format, a...)
 
@@ -72,7 +72,7 @@ func LogInfof(format string, a ...interface{}) {
 
 }
 
-func LogDebug(msg interface{}) {
+func UtilLogDebug(msg interface{}) {
 
 	initLog()
 
@@ -81,7 +81,7 @@ func LogDebug(msg interface{}) {
 	l4g.Debug(msg)
 
 }
-func LogDebugf(format string, a ...interface{}) {
+func UtilLogDebugf(format string, a ...interface{}) {
 
 	msg := fmt.Sprintf(format, a...)
 

@@ -1,15 +1,15 @@
-package util
+package tgo
 
 import (
 	"strconv"
 	"strings"
 )
 
-func IsEmpty(data string) bool {
+func UtilIsEmpty(data string) bool {
 	return strings.Trim(data, " ") == ""
 }
 
-func GetStringFromIntArray(data []int, sep string) string {
+func UtilGetStringFromIntArray(data []int, sep string) string {
 
 	dataStr := GetStringArrayFromIntArray(data)
 
@@ -17,7 +17,7 @@ func GetStringFromIntArray(data []int, sep string) string {
 
 }
 
-func GetStringFromInt64Array(data []int64, sep string) string {
+func UtilGetStringFromInt64Array(data []int64, sep string) string {
 
 	dataStr := GetStringArrayFromInt64Array(data)
 
@@ -25,7 +25,7 @@ func GetStringFromInt64Array(data []int64, sep string) string {
 
 }
 
-func GetStringArrayFromIntArray(data []int) []string {
+func UtilGetStringArrayFromIntArray(data []int) []string {
 
 	model := []string{}
 
@@ -38,7 +38,7 @@ func GetStringArrayFromIntArray(data []int) []string {
 	}
 	return model
 }
-func GetStringArrayFromInt64Array(data []int64) []string {
+func UtilGetStringArrayFromInt64Array(data []int64) []string {
 
 	model := []string{}
 
@@ -52,7 +52,7 @@ func GetStringArrayFromInt64Array(data []int64) []string {
 	return model
 }
 
-func SplitToIntArray(data string, sep string) []int {
+func UtilSplitToIntArray(data string, sep string) []int {
 	var model []int
 
 	dataArray := strings.Split(data, sep)
@@ -69,7 +69,7 @@ func SplitToIntArray(data string, sep string) []int {
 	return model
 }
 
-func SplitToInt64Array(data string, sep string) []int64 {
+func UtilSplitToInt64Array(data string, sep string) []int64 {
 	var model []int64
 
 	dataArray := strings.Split(data, sep)

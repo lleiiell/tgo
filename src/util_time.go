@@ -1,10 +1,10 @@
-package util
+package tgo
 
 import (
 	"time"
 )
 
-func GetDate(t time.Time) time.Time {
+func UtilTimeGetDate(t time.Time) time.Time {
 
 	year, month, day := t.Date()
 

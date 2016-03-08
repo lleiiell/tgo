@@ -1,20 +1,18 @@
-package dao
+package tgo
 
 import (
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
-	"github.com/tonyjt/tgo/configs"
-	"github.com/tonyjt/tgo/util"
 )
 
-type BaseDaoMysql struct {
+type Mysql struct {
 	TableName string
 }
 
-func NewDaoMysql() *BaseDaoMysql {
+func NewDaoMysql() *Mysql {
 
-	return &BaseDaoMysql{}
+	return &Mysql{}
 }
 
 type Condition struct {
@@ -58,15 +56,15 @@ func initMysql(isRead bool) (gorm.DB, error) {
 	return db, err
 }
 
-func (d *BaseDaoMysql) GetReadOrm() (gorm.DB, error) {
+func (d *Mysql) GetReadOrm() (gorm.DB, error) {
 	return d.getOrm(true)
 }
 
-func (d *BaseDaoMysql) GetWriteOrm() (gorm.DB, error) {
+func (d *Mysql) GetWriteOrm() (gorm.DB, error) {
 	return d.getOrm(false)
 }
 
-func (d *BaseDaoMysql) getOrm(isRead bool) (gorm.DB, error) {
+func (d *Mysql) getOrm(isRead bool) (gorm.DB, error) {
 	db, err := initMysql(isRead)
 
 	if err != nil {
@@ -78,7 +76,7 @@ func (d *BaseDaoMysql) getOrm(isRead bool) (gorm.DB, error) {
 	return db, err
 }
 
-func (d *BaseDaoMysql) Insert(model interface{}) error {
+func (d *Mysql) Insert(model interface{}) error {
 	orm, err := d.GetWriteOrm()
 
 	if err != nil {
@@ -99,7 +97,7 @@ func (d *BaseDaoMysql) Insert(model interface{}) error {
 	return errInsert
 }
 
-func (d *BaseDaoMysql) Select(condition string, data interface{}) error {
+func (d *Mysql) Select(condition string, data interface{}) error {
 
 	orm, err := d.GetReadOrm()
 

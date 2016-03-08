@@ -1,4 +1,4 @@
-package configs
+package tgo
 
 import (
 	"sync"

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"util"
 )
 
 func getConfigs(name string, data interface{}, defaultData interface{}) {
