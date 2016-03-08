@@ -19,7 +19,7 @@ func getConfigs(name string, data interface{}, defaultData interface{}) {
 
 	if err != nil {
 
-		util.LogError(fmt.Sprintf("open %s config file failed:%s", name, err.Error()))
+		UtilLogError(fmt.Sprintf("open %s config file failed:%s", name, err.Error()))
 
 		data = defaultData
 
@@ -35,7 +35,7 @@ func getConfigs(name string, data interface{}, defaultData interface{}) {
 		//}
 		if errDecode != nil {
 			//记录日志
-			util.LogError(fmt.Sprintf("decode %s config error:%s", name, errDecode.Error()))
+			UtilLogError(fmt.Sprintf("decode %s config error:%s", name, errDecode.Error()))
 			data = defaultData
 		}
 	}

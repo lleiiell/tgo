@@ -29,7 +29,7 @@ func NewDaoMongo() *DaoMongo {
 
 func (m *DaoMongo) getSession() (*mgo.Session, string, error) {
 
-	config := configs.NewDb()
+	config := NewConfigDb()
 
 	configMongo := config.Mongo.GetMongoConfig()
 
@@ -49,7 +49,7 @@ func (m *DaoMongo) getSession() (*mgo.Session, string, error) {
 
 	if err != nil {
 
-		util.LogErrorf("connect to mongo server error:%s,%s", err.Error(), connectionString)
+		UtilLogErrorf("connect to mongo server error:%s,%s", err.Error(), connectionString)
 		return nil, "", err
 	}
 	/*
@@ -89,14 +89,14 @@ func (m *DaoMongo) GetNextSequence() (int64, error) {
 	_, errApply := c.Find(condition).Apply(change, &result)
 
 	if errApply != nil {
-		util.LogErrorf("mongo findAndModify counter %s failed:%s", m.CollectionName, errApply.Error())
+		UtilLogErrorf("mongo findAndModify counter %s failed:%s", m.CollectionName, errApply.Error())
 		return 0, errApply
 	}
 
 	setInt, resultNext := result["seq"].(int)
 
 	if !resultNext {
-		util.LogErrorf("mongo findAndModify get counter %sfailed", m.CollectionName)
+		UtilLogErrorf("mongo findAndModify get counter %sfailed", m.CollectionName)
 	}
 	seq := int64(setInt)
 
@@ -114,7 +114,7 @@ func (m *DaoMongo) GetById(id int64, data interface{}) error {
 	errFind := session.DB(dbName).C(m.CollectionName).Find(bson.M{"_id": id}).One(data)
 
 	if errFind != nil {
-		util.LogErrorf("mongo %s get id failed:%v", m.CollectionName, errFind.Error())
+		UtilLogErrorf("mongo %s get id failed:%v", m.CollectionName, errFind.Error())
 	}
 
 	return errFind
@@ -147,7 +147,7 @@ func (m *DaoMongo) Insert(data IModelMongo) error {
 
 	if errInsert != nil {
 
-		util.LogErrorf("mongo %s insert failed:%v", m.CollectionName, errInsert.Error())
+		UtilLogErrorf("mongo %s insert failed:%v", m.CollectionName, errInsert.Error())
 
 		return errInsert
 	}
@@ -189,7 +189,7 @@ func (m *DaoMongo) InsertM(data []IModelMongo) error {
 
 	if errInsert != nil {
 
-		util.LogErrorf("mongo %s insertM failed:%v", m.CollectionName, errInsert.Error())
+		UtilLogErrorf("mongo %s insertM failed:%v", m.CollectionName, errInsert.Error())
 
 		return errInsert
 	}
@@ -210,7 +210,7 @@ func (m *DaoMongo) Count(condition interface{}) (int, error) {
 
 	if errCount != nil {
 
-		util.LogErrorf("mongo %s count failed:%v", m.CollectionName, errCount.Error())
+		UtilLogErrorf("mongo %s count failed:%v", m.CollectionName, errCount.Error())
 
 	}
 	return count, errCount
@@ -244,7 +244,7 @@ func (m *DaoMongo) Find(condition interface{}, limit int, skip int, data interfa
 
 	if errSelect != nil {
 
-		util.LogErrorf("mongo %s find failed:%v", m.CollectionName, errSelect.Error())
+		UtilLogErrorf("mongo %s find failed:%v", m.CollectionName, errSelect.Error())
 
 	}
 
@@ -265,7 +265,7 @@ func (m *DaoMongo) Distinct(condition interface{}, field string, data interface{
 
 	if errDistinct != nil {
 
-		util.LogErrorf("mongo %s distinct failed:%s", m.CollectionName, errDistinct.Error())
+		UtilLogErrorf("mongo %s distinct failed:%s", m.CollectionName, errDistinct.Error())
 
 	}
 
@@ -297,7 +297,7 @@ func (m *DaoMongo) Sum(condition interface{}, sumField string) (int, error) {
 	errPipe := pipe.One(&result)
 
 	if errPipe != nil {
-		util.LogErrorf("mongo %s sum failed: %s", m.CollectionName, errPipe.Error())
+		UtilLogErrorf("mongo %s sum failed: %s", m.CollectionName, errPipe.Error())
 
 		return 0, errPipe
 	}
@@ -329,7 +329,7 @@ func (m *DaoMongo) DistinctCount(condition interface{}, field string) (int, erro
 	errPipe := pipe.One(&result)
 
 	if errPipe != nil {
-		util.LogErrorf("mongo %s distinct count failed: %s", m.CollectionName, errPipe.Error())
+		UtilLogErrorf("mongo %s distinct count failed: %s", m.CollectionName, errPipe.Error())
 
 		return 0, errPipe
 	}
@@ -358,7 +358,7 @@ func (m *DaoMongo) Update(condition interface{}, data map[string]interface{}) er
 	errUpdate := coll.Update(condition, updateData)
 
 	if errUpdate != nil {
-		util.LogErrorf("mongo %s update failed: %s", m.CollectionName, errUpdate.Error())
+		UtilLogErrorf("mongo %s update failed: %s", m.CollectionName, errUpdate.Error())
 	}
 
 	return errUpdate

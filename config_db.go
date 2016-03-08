@@ -16,7 +16,7 @@ type DbConfig struct {
 	Mongo MongoConfig
 }
 
-func NewDb() *DbConfig {
+func NewConfigDb() *DbConfig {
 	return &DbConfig{}
 }
 

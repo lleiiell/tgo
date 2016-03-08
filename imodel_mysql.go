@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-type IModelMongo interface {
+type IModelMysql interface {
 	InitTime(t time.Time)
 	SetUpdatedTime(t time.Time)
 	SetId(id int)
