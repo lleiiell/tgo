@@ -6,9 +6,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func UtilResponseReturnJson(c *gin.Context, code int, msg string, model interface{}) {
+func UtilResponseReturnJson(c *gin.Context, code int, model interface{}) {
 
 	var rj interface{}
+
+	msg := ConfigCodeGetMessage(code)
 
 	if code == 0 {
 		code = 1001
@@ -33,11 +35,11 @@ func UtilResponseReturnJson(c *gin.Context, code int, msg string, model interfac
 	}
 }
 
-func UtilResponseReturnJsonFailed(c *gin.Context, code int, message string) {
+func UtilResponseReturnJsonFailed(c *gin.Context, code int) {
 
-	UtilResponseReturnJson(c, code, message, nil)
+	UtilResponseReturnJson(c, code, nil)
 }
 
 func UtilResponseReturnJsonSuccess(c *gin.Context, data interface{}) {
-	UtilResponseReturnJson(c, 0, "", data)
+	UtilResponseReturnJson(c, 0, data)
 }
