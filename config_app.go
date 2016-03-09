@@ -33,7 +33,7 @@ func configAppGetDefault() *ConfigApp {
 }
 func ConfigAppGetString(key string, defaultConfig string) string {
 
-	config := ConfigAppGet("Env")
+	config := ConfigAppGet(key)
 
 	configStr := config.(string)
 
