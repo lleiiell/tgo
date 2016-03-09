@@ -31,6 +31,18 @@ func configAppInit() {
 func configAppGetDefault() *ConfigApp {
 	return &ConfigApp{map[string]interface{}{"Env": "idc", "UrlUserLogin": "http://user.haiziwang.com/user/CheckLogin"}}
 }
+func ConfigAppGetString(key string, defaultConfig string) string {
+
+	config := ConfigAppGet("Env")
+
+	configStr := config.(string)
+
+	if UtilIsEmpty(configStr) {
+		configStr = defaultConfig
+	}
+	return configStr
+}
+
 func ConfigAppGet(key string) interface{} {
 
 	configAppInit()
