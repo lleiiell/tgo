@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	//"fmt"
 	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 func UtilResponseReturnJson(c *gin.Context, code int, model interface{}) {
@@ -42,4 +43,8 @@ func UtilResponseReturnJsonFailed(c *gin.Context, code int) {
 
 func UtilResponseReturnJsonSuccess(c *gin.Context, data interface{}) {
 	UtilResponseReturnJson(c, 0, data)
+}
+
+func UtilResponseRedirect(c *gin.Context, url string) {
+	c.Redirect(http.StatusMovedPermanently, url)
 }
