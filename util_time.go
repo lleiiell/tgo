@@ -12,8 +12,16 @@ func UtilTimeGetDate(t time.Time) time.Time {
 }
 
 func UtilTimeIsToday(t time.Time) bool {
-	if t.Format("20060102") == time.Now().Format("20060102") {
+	return UtilTimeSameDay(t, time.Now())
+}
+
+func UtilTimeSameDay(t1 time.Time, t2 time.Time) bool {
+	if UtilTimeDiffDay(t1, t2) == 0 {
 		return true
 	}
 	return false
+}
+
+func UtilTimeDiffDay(t1 time.Time, t2 time.Time) int {
+	return int(t2.Truncate(24*time.Hour).Sub(t1.Truncate(24*time.Hour)) / (24 * time.Hour))
 }
