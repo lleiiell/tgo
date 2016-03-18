@@ -49,7 +49,7 @@ func (m *DaoMongo) getSession() (*mgo.Session, string, error) {
 
 	if err != nil {
 
-		UtilLogErrorf("connect to mongo server error:%s,%s", err.Error(), connectionString)
+		err = m.processError(err, "connect to mongo server error:%s,%s", err.Error(), connectionString)
 		return nil, "", err
 	}
 	/*
@@ -89,7 +89,7 @@ func (m *DaoMongo) GetNextSequence() (int64, error) {
 	_, errApply := c.Find(condition).Apply(change, &result)
 
 	if errApply != nil {
-		UtilLogErrorf("mongo findAndModify counter %s failed:%s", m.CollectionName, errApply.Error())
+		errApply = m.processError(errApply, "mongo findAndModify counter %s failed:%s", m.CollectionName, errApply.Error())
 		return 0, errApply
 	}
 
@@ -114,7 +114,7 @@ func (m *DaoMongo) GetById(id int64, data interface{}) error {
 	errFind := session.DB(dbName).C(m.CollectionName).Find(bson.M{"_id": id}).One(data)
 
 	if errFind != nil {
-		UtilLogErrorf("mongo %s get id failed:%v", m.CollectionName, errFind.Error())
+		errFind = m.processError(errFind, "mongo %s get id failed:%v", m.CollectionName, errFind.Error())
 	}
 
 	return errFind
@@ -147,7 +147,7 @@ func (m *DaoMongo) Insert(data IModelMongo) error {
 
 	if errInsert != nil {
 
-		UtilLogErrorf("mongo %s insert failed:%v", m.CollectionName, errInsert.Error())
+		errInsert = m.processError(errInsert, "mongo %s insert failed:%v", m.CollectionName, errInsert.Error())
 
 		return errInsert
 	}
@@ -189,7 +189,7 @@ func (m *DaoMongo) InsertM(data []IModelMongo) error {
 
 	if errInsert != nil {
 
-		UtilLogErrorf("mongo %s insertM failed:%v", m.CollectionName, errInsert.Error())
+		errInsert = m.processError(errInsert, "mongo %s insertM failed:%v", m.CollectionName, errInsert.Error())
 
 		return errInsert
 	}
@@ -210,7 +210,7 @@ func (m *DaoMongo) Count(condition interface{}) (int, error) {
 
 	if errCount != nil {
 
-		UtilLogErrorf("mongo %s count failed:%v", m.CollectionName, errCount.Error())
+		errCount = m.processError(errCount, "mongo %s count failed:%v", m.CollectionName, errCount.Error())
 
 	}
 	return count, errCount
@@ -244,7 +244,7 @@ func (m *DaoMongo) Find(condition interface{}, limit int, skip int, data interfa
 
 	if errSelect != nil {
 
-		UtilLogErrorf("mongo %s find failed:%v", m.CollectionName, errSelect.Error())
+		errSelect = m.processError(errSelect, "mongo %s find failed:%v", m.CollectionName, errSelect.Error())
 
 	}
 
@@ -265,7 +265,7 @@ func (m *DaoMongo) Distinct(condition interface{}, field string, data interface{
 
 	if errDistinct != nil {
 
-		UtilLogErrorf("mongo %s distinct failed:%s", m.CollectionName, errDistinct.Error())
+		errDistinct = m.processError(errDistinct, "mongo %s distinct failed:%s", m.CollectionName, errDistinct.Error())
 
 	}
 
@@ -297,7 +297,7 @@ func (m *DaoMongo) Sum(condition interface{}, sumField string) (int, error) {
 	errPipe := pipe.One(&result)
 
 	if errPipe != nil {
-		UtilLogErrorf("mongo %s sum failed: %s", m.CollectionName, errPipe.Error())
+		errPipe = m.processError(errPipe, "mongo %s sum failed: %s", m.CollectionName, errPipe.Error())
 
 		return 0, errPipe
 	}
@@ -329,7 +329,7 @@ func (m *DaoMongo) DistinctCount(condition interface{}, field string) (int, erro
 	errPipe := pipe.One(&result)
 
 	if errPipe != nil {
-		UtilLogErrorf("mongo %s distinct count failed: %s", m.CollectionName, errPipe.Error())
+		errPipe = m.processError(errPipe, "mongo %s distinct count failed: %s", m.CollectionName, errPipe.Error())
 
 		return 0, errPipe
 	}
@@ -358,8 +358,18 @@ func (m *DaoMongo) Update(condition interface{}, data map[string]interface{}) er
 	errUpdate := coll.Update(condition, updateData)
 
 	if errUpdate != nil {
-		UtilLogErrorf("mongo %s update failed: %s", m.CollectionName, errUpdate.Error())
+		errUpdate = m.processError(errUpdate, "mongo %s update failed: %s", m.CollectionName, errUpdate.Error())
 	}
 
 	return errUpdate
+}
+
+func (m *DaoMongo) processError(err error, formatter string, a ...interface{}) error {
+	if err.Error() == "not found" {
+		return nil
+	}
+
+	UtilLogErrorf(formatter, m.CollectionName, a)
+
+	return err
 }
