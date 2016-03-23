@@ -1,0 +1,13 @@
+{
+	"redis":{
+		"Address":"172.172.177.20",
+		"Port":63793,
+		"Prefix":"component",
+		"ConnectTimeout":10000,
+		"ReadTimeout":10000,
+		"WriteTimeout":10000,
+		"PoolMaxIdel":10000,
+		"PoolMaxActive":10000,
+		"PoolIdleTimeout":180000
+	}
+}

@@ -1,0 +1,23 @@
+{
+	"Mysql":{
+		"DbName":"component",
+		"Write":{
+			"Address":"172.172.177.20",
+			"Port":33069,
+			"User":"root",
+			"Password":"root@dev"
+		},
+		"Reads":[{
+			"Address":"172.172.177.20",
+			"Port":33069,
+			"User":"root",
+			"Password":"root@dev"
+		}]
+	},
+	"Mongo":{
+		"DbName":"component",
+		"Servers":"172.172.177.20:34004",
+		"Read_option":"PRIMARY",
+		"Timeout": 10000
+	}
+}
