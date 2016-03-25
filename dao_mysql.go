@@ -107,7 +107,7 @@ func (d *DaoMysql) Select(condition string, data interface{}) error {
 
 	defer orm.Close()
 
-	errFind := orm.Where(condition).Find(&data).Error
+	errFind := orm.Where(condition).Find(data).Error
 
 	if errFind != nil {
 		UtilLogError(fmt.Sprintf("mysql select table %s error:%s", d.TableName, errFind.Error()))
