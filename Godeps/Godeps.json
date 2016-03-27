@@ -3,10 +3,6 @@
 	"GoVersion": "go1.6",
 	"Deps": [
 		{
-			"ImportPath": "github.com/alecthomas/log4go",
-			"Rev": "e5dc62318d9bd58682f1dceb53a4b24e8253682f"
-		},
-		{
 			"ImportPath": "github.com/chasex/redis-go-cluster",
 			"Comment": "v1.0.0-9-g7cf243a",
 			"Rev": "7cf243aabf65070b189cf851b6d20a034fd8cacd"
@@ -54,6 +50,10 @@
 		{
 			"ImportPath": "github.com/manucorporat/sse",
 			"Rev": "ee05b128a739a0fb76c7ebd3ae4810c1de808d6d"
+		},
+		{
+			"ImportPath": "github.com/tonyjt/log4go",
+			"Rev": "0e3d6f459b24490de7285d44b7b9a469adebabfd"
 		},
 		{
 			"ImportPath": "golang.org/x/net/context",

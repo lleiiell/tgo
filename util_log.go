@@ -2,7 +2,7 @@ package tgo
 
 import (
 	"fmt"
-	l4g "github.com/alecthomas/log4go"
+	l4g "github.com/tonyjt/log4go"
 	"path/filepath"
 	"sync"
 )

@@ -29,6 +29,13 @@ func configCodeInit() {
 	}
 }
 
+func configCodeClear() {
+	codeConfigMux.Lock()
+
+	defer codeConfigMux.Unlock()
+	codeConfig = nil
+}
+
 func configCodeGetDefault() *ConfigCodeList {
 	return &ConfigCodeList{Codes: map[string]string{"0": "success"}}
 }

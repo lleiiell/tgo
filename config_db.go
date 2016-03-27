@@ -58,6 +58,13 @@ func configDbInit() {
 	}
 }
 
+func configDbClear() {
+	dbConfigMux.Lock()
+
+	defer dbConfigMux.Unlock()
+
+	dbConfig = nil
+}
 func configDbGetDefault() *ConfigDb {
 	return &ConfigDb{Mysql: ConfigMysql{Write: ConfigDbBase{"172.172.177.15", 33062, "root", "root@dev", ""},
 		Reads: []ConfigDbBase{ConfigDbBase{"172.172.177.15", 33062, "root", "root@dev", ""},

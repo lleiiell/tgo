@@ -40,3 +40,10 @@ func configGet(name string, data interface{}, defaultData interface{}) {
 		}
 	}
 }
+
+func ConfigReload() {
+	configAppClear()
+	configCacheClear()
+	configCodeClear()
+	configDbClear()
+}

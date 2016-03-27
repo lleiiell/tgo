@@ -28,6 +28,13 @@ func configAppInit() {
 		configGet("app", appConfig, defaultConfig)
 	}
 }
+func configAppClear() {
+	appConfigMux.Lock()
+	defer appConfigMux.Unlock()
+
+	appConfig = nil
+}
+
 func configAppGetDefault() *ConfigApp {
 	return &ConfigApp{map[string]interface{}{"Env": "idc", "UrlUserLogin": "http://user.haiziwang.com/user/CheckLogin"}}
 }
