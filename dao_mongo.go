@@ -6,6 +6,7 @@ import (
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -27,31 +28,52 @@ func NewDaoMongo() *DaoMongo {
 	return &DaoMongo{}
 }
 
+var (
+	sessionMongo    *mgo.Session
+	sessionMongoMux sync.Mutex
+)
+
 func (m *DaoMongo) getSession() (*mgo.Session, string, error) {
 
 	config := NewConfigDb()
 
 	configMongo := config.Mongo.Get()
 
-	if configMongo == nil || configMongo.Servers == "" || configMongo.DbName == "" {
-		return nil, "", errors.New("config error")
+	if sessionMongo == nil {
+		sessionMongoMux.Lock()
+
+		defer sessionMongoMux.Unlock()
+
+		if sessionMongo == nil {
+
+			if configMongo == nil || configMongo.Servers == "" || configMongo.DbName == "" {
+				return nil, "", errors.New("config error")
+			}
+
+			if strings.Trim(configMongo.Read_option, " ") == "" {
+				configMongo.Read_option = "nearest"
+			}
+
+			connectionString := fmt.Sprintf("mongodb://%s", configMongo.Servers)
+
+			var err error
+			sessionMongo, err = mgo.Dial(connectionString)
+
+			if err != nil {
+
+				err = m.processError(err, "connect to mongo server error:%s,%s", err.Error(), connectionString)
+				return nil, "", err
+			}
+			sessionMongo.SetPoolLimit(1000)
+		}
 	}
 
-	if strings.Trim(configMongo.Read_option, " ") == "" {
-		configMongo.Read_option = "nearest"
+	if sessionMongo != nil {
+		return sessionMongo.Clone(), configMongo.DbName, nil
 	}
 
-	connectionString := fmt.Sprintf("mongodb://%s", configMongo.Servers)
+	//session.SetSocketTimeout(time.Duration(configMongo.Timeout) * time.Millisecond)
 
-	session, err := mgo.Dial(connectionString)
-
-	session.SetSocketTimeout(time.Duration(configMongo.Timeout) * time.Millisecond)
-
-	if err != nil {
-
-		err = m.processError(err, "connect to mongo server error:%s,%s", err.Error(), connectionString)
-		return nil, "", err
-	}
 	/*
 		if configs.IsEnvDev() {
 			defaultLogger := log.New(os.Stderr, "[Mongo] ", log.Ldate|log.Ltime|log.Lshortfile)
@@ -61,7 +83,7 @@ func (m *DaoMongo) getSession() (*mgo.Session, string, error) {
 			mgo.SetDebug(true)
 		}*/
 
-	return session, configMongo.DbName, err
+	return nil, configMongo.DbName, errors.New("session mongo is nul")
 }
 
 func (m *DaoMongo) GetNextSequence() (int64, error) {

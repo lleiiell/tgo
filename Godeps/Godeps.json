@@ -36,6 +36,10 @@
 			"Rev": "66312f7fe2678aa0f5ec770f96702f4c4ec5aa8e"
 		},
 		{
+			"ImportPath": "github.com/golang/glog",
+			"Rev": "23def4e6c14b4da8ac2ed8007337bc5eb5007998"
+		},
+		{
 			"ImportPath": "github.com/golang/protobuf/proto",
 			"Rev": "8d92cf5fc15a4382f8964b08e1f42a75c0591aa3"
 		},
@@ -54,6 +58,26 @@
 		{
 			"ImportPath": "github.com/tonyjt/log4go",
 			"Rev": "0e3d6f459b24490de7285d44b7b9a469adebabfd"
+		},
+		{
+			"ImportPath": "github.com/youtube/vitess/go/acl",
+			"Comment": "v2.0.0-beta.1-299-g0698355",
+			"Rev": "0698355fb71e1a9379b02ea45c3755158bcb2ed9"
+		},
+		{
+			"ImportPath": "github.com/youtube/vitess/go/cache",
+			"Comment": "v2.0.0-beta.1-299-g0698355",
+			"Rev": "0698355fb71e1a9379b02ea45c3755158bcb2ed9"
+		},
+		{
+			"ImportPath": "github.com/youtube/vitess/go/pools",
+			"Comment": "v2.0.0-beta.1-299-g0698355",
+			"Rev": "0698355fb71e1a9379b02ea45c3755158bcb2ed9"
+		},
+		{
+			"ImportPath": "github.com/youtube/vitess/go/sync2",
+			"Comment": "v2.0.0-beta.1-299-g0698355",
+			"Rev": "0698355fb71e1a9379b02ea45c3755158bcb2ed9"
 		},
 		{
 			"ImportPath": "golang.org/x/net/context",
