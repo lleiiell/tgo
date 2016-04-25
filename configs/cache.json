@@ -6,8 +6,8 @@
 		"ConnectTimeout":10000,
 		"ReadTimeout":10000,
 		"WriteTimeout":10000,
-		"PoolMaxIdel":1000,
-		"PoolMaxActive":200,
-		"PoolIdleTimeout":60000
+		"PoolMaxIdel":10000,
+		"PoolMaxActive":10000,
+		"PoolIdleTimeout":180000
 	}
 }

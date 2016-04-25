@@ -85,9 +85,7 @@ func (m *DaoMongo) getSession() (*mgo.Session, string, error) {
 
 	return nil, configMongo.DbName, errors.New("session mongo is nul")
 }
-func (m *DaoMongo) GetId() (int64, error) {
-	return m.GetNextSequence()
-}
+
 func (m *DaoMongo) GetNextSequence() (int64, error) {
 
 	session, dbName, err := m.getSession()
