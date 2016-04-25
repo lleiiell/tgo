@@ -21,11 +21,13 @@ func configAppInit() {
 		appConfigMux.Lock()
 		defer appConfigMux.Unlock()
 
-		appConfig = &ConfigApp{}
+		if appConfig == nil {
+			appConfig = &ConfigApp{}
 
-		defaultConfig := configAppGetDefault()
+			defaultConfig := configAppGetDefault()
 
-		configGet("app", appConfig, defaultConfig)
+			configGet("app", appConfig, defaultConfig)
+		}
 	}
 }
 func configAppClear() {
