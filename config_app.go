@@ -1,7 +1,12 @@
 package tgo
 
 import (
+	"errors"
+	"fmt"
+	"math/rand"
+	"strings"
 	"sync"
+	"time"
 )
 
 var (
@@ -62,6 +67,47 @@ func ConfigAppGet(key string) interface{} {
 		return nil
 	}
 	return config
+}
+
+func ConfigAppFailoverGet(key string) (string, error) {
+
+	var server string
+
+	var err error
+
+	failoverConfig := ConfigAppGet(key)
+
+	if failoverConfig == nil {
+		err = errors.New(fmt.Sprintf("config %s is null", key))
+	} else {
+
+		failoverUrl := failoverConfig.(string)
+
+		if UtilIsEmpty(failoverUrl) {
+			err = errors.New(fmt.Sprintf("config %s is empty", key))
+		} else {
+			failoverArray := strings.Split(failoverUrl, ",")
+
+			randomMax := len(failoverArray)
+			if randomMax == 0 {
+				err = errors.New(fmt.Sprintf("config %s is empty", key))
+			} else {
+				var randomValue int
+				if randomMax > 1 {
+
+					rand.Seed(time.Now().UnixNano())
+
+					randomValue = rand.Intn(randomMax)
+
+				} else {
+					randomValue = 0
+				}
+				server = failoverArray[randomValue]
+
+			}
+		}
+	}
+	return server, err
 }
 
 func ConfigEnvGet() string {

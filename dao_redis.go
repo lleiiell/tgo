@@ -50,7 +50,7 @@ func (b *DaoRedis) dail() (redis.Conn, error) {
 
 	cacheConfig := ConfigCacheGetRedis()
 	address := fmt.Sprintf("%s:%d", cacheConfig.Address, cacheConfig.Port)
-	c, err := redis.Dial("tcp", address)
+	c, err := redis.DialTimeout("tcp", address, 0, time.Duration(cacheConfig.ReadTimeout)*time.Millisecond, time.Duration(cacheConfig.WriteTimeout)*time.Millisecond)
 	if err != nil {
 		UtilLogErrorf("open redis pool error: %s", err.Error())
 		return nil, err
@@ -68,46 +68,36 @@ func (b *DaoRedis) InitRedisPool() (pools.Resource, error) {
 		defer redisPoolMux.Unlock()
 
 		if pool == nil {
+
 			cacheConfig := ConfigCacheGetRedis()
+
+			if cacheConfig.PoolMinActive == 0 {
+				cacheConfig.PoolMinActive = 1
+			}
 
 			pool = pools.NewResourcePool(func() (pools.Resource, error) {
 				c, err := b.dail()
 				return ResourceConn{c}, err
-			}, 1, cacheConfig.PoolMaxActive, time.Duration(cacheConfig.PoolIdleTimeout)*time.Millisecond)
+			}, cacheConfig.PoolMinActive, cacheConfig.PoolMaxActive, time.Duration(cacheConfig.PoolIdleTimeout)*time.Millisecond)
 		}
 	}
 	if pool != nil {
-
 		var r pools.Resource
 		var err error
-
 		/*
-			for i := 0; i < 1 || i < 10; i++ {
-				ctx := context.TODO()
-				r, err = pool.Get(ctx)
+			if pool.Available() == 0 {
+				var conn redis.Conn
+				conn, err = b.dail()
+
+
 				if err != nil {
-					UtilLogErrorf("redis get connection err:%s", err.Error())
+					UtilLogErrorf("redis ava dail connection err:%s", err.Error())
 				}
-				if i > 0 {
-					UtilLogErrorf("index is %d", i)
-				}
-
-				if r == nil {
-					UtilLogErrorf("connection is null")
-					continue
-				}
-				rc := r.(ResourceConn)
-
-				if rc.Conn.Err() != nil {
-					r.Close()
-					//连接断开，重新打开
-					UtilLogErrorf("redis rc connection err:%s", rc.Conn.Err().Error())
-					err = rc.Conn.Err()
-					continue
-				}
-				break
+				return ResourceConn{conn}, err
 			}*/
+
 		ctx := context.TODO()
+
 		r, err = pool.Get(ctx)
 
 		if err != nil {
@@ -118,14 +108,15 @@ func (b *DaoRedis) InitRedisPool() (pools.Resource, error) {
 			rc := r.(ResourceConn)
 
 			if rc.Conn.Err() != nil {
-				//UtilLogErrorf("redis rc connection err:%s", rc.Conn.Err().Error())
+				UtilLogErrorf("redis rc connection err:%s", rc.Conn.Err().Error())
+
 				rc.Close()
 				//连接断开，重新打开
 				var conn redis.Conn
 				conn, err = b.dail()
-
 				if err != nil {
 					UtilLogErrorf("redis redail connection err:%s", err.Error())
+					return nil, err
 				} else {
 					return ResourceConn{conn}, err
 				}

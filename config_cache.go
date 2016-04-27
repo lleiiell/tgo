@@ -24,6 +24,7 @@ type ConfigCacheRedis struct {
 	PoolMaxIdle     int
 	PoolMaxActive   int
 	PoolIdleTimeout int
+	PoolMinActive   int
 }
 
 func configCacheGet() {
@@ -34,11 +35,13 @@ func configCacheGet() {
 
 		defer cacheConfigMux.Unlock()
 
-		cacheConfig = &ConfigCache{}
+		if cacheConfig == nil || cacheConfig.Redis.Address == "" {
+			cacheConfig = &ConfigCache{}
 
-		defaultCacheConfig := configCacheGetDefault()
+			defaultCacheConfig := configCacheGetDefault()
 
-		configGet("cache", cacheConfig, defaultCacheConfig)
+			configGet("cache", cacheConfig, defaultCacheConfig)
+		}
 	}
 }
 
@@ -51,7 +54,7 @@ func configCacheClear() {
 }
 
 func configCacheGetDefault() *ConfigCache {
-	return &ConfigCache{Redis: ConfigCacheRedis{"172.172.177.15", 33062, "component", 1000, 1000, 1000, 10, 100, 180000}}
+	return &ConfigCache{Redis: ConfigCacheRedis{"172.172.177.15", 33062, "component", 1000, 1000, 1000, 10, 100, 180000, 2}}
 }
 
 func ConfigCacheGetRedis() *ConfigCacheRedis {
