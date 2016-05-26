@@ -23,5 +23,5 @@ func UtilTimeSameDay(t1 time.Time, t2 time.Time) bool {
 }
 
 func UtilTimeDiffDay(t1 time.Time, t2 time.Time) int {
-	return int(t2.Truncate(24*time.Hour).Sub(t1.Truncate(24*time.Hour)) / (24 * time.Hour))
+	return int(UtilTimeGetDate(t2).Sub(UtilTimeGetDate(t1)) / (24 * time.Hour))
 }
