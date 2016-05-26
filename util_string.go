@@ -3,6 +3,14 @@ package tgo
 import (
 	"strconv"
 	"strings"
+	"math/rand"
+	"time"
+	"reflect"
+	"bytes"
+)
+
+const (
+	Letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!#$%&*+=?@^_|-"
 )
 
 func UtilIsEmpty(data string) bool {
@@ -84,4 +92,49 @@ func UtilSplitToInt64Array(data string, sep string) []int64 {
 		model = append(model, m)
 	}
 	return model
+}
+
+func UtilStringGenerateRandomString(n int) string {
+	letters := []rune(Letters)
+	rand.Seed(time.Now().UTC().UnixNano())
+	randomString := make([]rune, n)
+	for i := range randomString {
+		randomString[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(randomString)
+}
+
+func UtilStringCheckStringExisted(strs []string, str string) bool {
+	for _, v := range strs  {
+		if v == str {
+			return true
+		}
+	}
+
+	return false
+}
+
+func UtilStringContains(obj interface{}, target interface{}) (bool) {
+	targetValue := reflect.ValueOf(target)
+	switch reflect.TypeOf(target).Kind() {
+	case reflect.Slice, reflect.Array:
+		for i := 0; i < targetValue.Len(); i++ {
+			if targetValue.Index(i).Interface() == obj {
+				return true
+			}
+		}
+	case reflect.Map:
+		if targetValue.MapIndex(reflect.ValueOf(obj)).IsValid() {
+			return true
+		}
+	}
+	return false
+}
+
+func UtilStringConcat(buffer *bytes.Buffer, str string) {
+	buffer.WriteString(str)
+}
+
+func UtilStringConcatExist(strs []string, str string) []string {
+	return append(strs, str)
 }
