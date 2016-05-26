@@ -119,10 +119,16 @@ func (m *DaoMongo) GetNextSequence() (int64, error) {
 
 	setInt, resultNext := result["seq"].(int)
 
+	var seq int64
 	if !resultNext {
-		UtilLogErrorf("mongo findAndModify get counter %sfailed", m.CollectionName)
+		seq, resultNext = result["seq"].(int64)
+
+		if !resultNext {
+			UtilLogErrorf("mongo findAndModify get counter %s failed", m.CollectionName)
+		}
+	} else {
+		seq = int64(setInt)
 	}
-	seq := int64(setInt)
 
 	return seq, nil
 }
@@ -155,7 +161,10 @@ func (m *DaoMongo) Insert(data IModelMongo) error {
 		data.SetId(id)
 	}
 
-	data.InitTime(time.Now())
+	created_at := data.GetCreatedTime();
+	if created_at.Equal(time.Time{}) {
+		data.InitTime(time.Now())
+	}
 
 	session, dbName, err := m.getSession()
 
