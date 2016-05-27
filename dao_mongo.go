@@ -161,6 +161,7 @@ func (m *DaoMongo) Insert(data IModelMongo) error {
 		data.SetId(id)
 	}
 
+	// 是否初始化时间
 	created_at := data.GetCreatedTime();
 	if created_at.Equal(time.Time{}) {
 		data.InitTime(time.Now())
@@ -200,7 +201,11 @@ func (m *DaoMongo) InsertM(data []IModelMongo) error {
 			item.SetId(id)
 		}
 
-		item.InitTime(time.Now())
+		// 是否初始化时间
+		created_at := item.GetCreatedTime();
+		if created_at.Equal(time.Time{}) {
+			item.InitTime(time.Now())
+		}
 	}
 
 	session, dbName, err := m.getSession()
