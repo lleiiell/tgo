@@ -2,7 +2,6 @@ package tgo
 
 import (
 	"encoding/json"
-	//"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -15,6 +14,12 @@ func UtilResponseReturnJson(c *gin.Context, code int, model interface{}) {
 
 	if code == 0 {
 		code = 1001
+	}
+	//添加结果
+	if code == 1001{
+		c.Set("result",true)
+	}else{
+		c.Set("result",false)
 	}
 	rj = gin.H{
 		"code":    code,
