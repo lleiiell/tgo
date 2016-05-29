@@ -85,3 +85,20 @@ func UtilLogDebugf(format string, a ...interface{}) {
 
 	l4g.Debug(msg)
 }
+
+
+type Log struct{
+
+}
+
+func NewUtilLog()*Log{
+  return &Log{}
+}
+
+func (l *Log) Error(format string, a ...interface{}){
+  UtilLogErrorf(format, a...)
+}
+
+func (l *Log) Info(format string, a ...interface{}){
+  UtilLogInfof(format, a...)
+}
