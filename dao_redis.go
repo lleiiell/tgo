@@ -4,14 +4,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/garyburd/redigo/redis"
-	"github.com/youtube/vitess/go/pools"
-	"golang.org/x/net/context"
 	"reflect"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/garyburd/redigo/redis"
+	"github.com/youtube/vitess/go/pools"
+	"golang.org/x/net/context"
 )
 
 type DaoRedis struct {
@@ -315,6 +316,12 @@ func (b *DaoRedis) Get(key string, data interface{}) bool {
 	}
 	return false
 }
+func (b *DaoRedis) GetE(key string, data interface{}) error {
+
+	_, err := b.doGet("GET", key, data)
+
+	return err
+}
 
 func (b *DaoRedis) Incr(key string) (int, bool) {
 
@@ -346,6 +353,58 @@ func (b *DaoRedis) HGet(key string, field string, value interface{}) bool {
 	return false
 }
 
+//HGetE 返回error
+func (b *DaoRedis) HGetE(key string, field string, value interface{}) error {
+
+	_, err := b.doGet("HGET", key, value, field)
+
+	return err
+}
+
+func (b *DaoRedis) HMGet(key string, value interface{}, fields ...string) bool {
+	redisResource, err := b.InitRedisPool()
+
+	if err != nil {
+		return false
+	}
+	defer pool.Put(redisResource)
+
+	redisClient := redisResource.(ResourceConn)
+
+	key = b.getKey(key)
+
+	var result interface{}
+	var errDo error
+
+	if len(fields) == 0 {
+		return false
+	} else {
+		result, errDo = redisClient.Do("HMGET", redis.Args{}.Add(key).AddFlat(fields)...)
+	}
+
+	if errDo != nil {
+
+		UtilLogErrorf("run redis HMGET command failed:%s", errDo.Error())
+		return false
+	}
+
+	if result == nil {
+		value = nil
+		return false
+	}
+
+	errorJson := json.Unmarshal(result.([]byte), value)
+
+	if errorJson != nil {
+
+		UtilLogErrorf("HMGET command result failed:%s", errorJson.Error())
+
+		return false
+	}
+
+	return true
+}
+
 func (b *DaoRedis) HSet(key string, field string, value interface{}) bool {
 
 	_, err := b.doSet("HSET", key, value, field)
@@ -355,7 +414,6 @@ func (b *DaoRedis) HSet(key string, field string, value interface{}) bool {
 	}
 	return true
 }
-
 func (b *DaoRedis) HSetNX(key string, field string, value interface{}) (int64, bool) {
 
 	return b.doSetNX("HSETNX", key, value, field)
