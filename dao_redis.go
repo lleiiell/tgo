@@ -181,6 +181,7 @@ func (b *DaoRedis) doSet(cmd string, key string, value interface{}, fields ...st
 	return reply, errDo
 }
 
+
 func (b *DaoRedis) doSetNX(cmd string, key string, value interface{}, field ...string) (int64, bool) {
 
 	reply, err := b.doSet(cmd, key, value, field...)
@@ -199,7 +200,44 @@ func (b *DaoRedis) doSetNX(cmd string, key string, value interface{}, field ...s
 
 	return replyInt, true
 }
+func (b *DaoRedis) doMSet(cmd string, key string, value map[string]interface{}) (interface{}, error) {
 
+	redisResource, err := b.InitRedisPool()
+
+	if err != nil {
+		return nil, err
+	}
+	defer pool.Put(redisResource)
+
+	var args []interface{}
+
+	if key !=""{
+			key = b.getKey(key)
+			args = append(args,key)
+	}
+
+	for k,v:=range value{
+		data, errJson := json.Marshal(v)
+
+		if errJson != nil {
+			UtilLogErrorf("redis %s marshal data: %v to json:%s", cmd,v, errJson.Error())
+			return nil, errJson
+		}
+		args = append(args,k,data)
+	}
+
+	redisClient := redisResource.(ResourceConn)
+
+	var reply interface{}
+	var errDo error
+	reply, errDo = redisClient.Do(cmd, args...)
+
+	if errDo != nil {
+		UtilLogErrorf("run redis command %s failed:%s", cmd, errDo.Error())
+		return nil, errDo
+	}
+	return reply, errDo
+}
 func (b *DaoRedis) doGet(cmd string, key string, value interface{}, fields ...string) (bool, error) {
 
 	redisResource, err := b.InitRedisPool()
@@ -419,26 +457,14 @@ func (b *DaoRedis) HSetNX(key string, field string, value interface{}) (int64, b
 	return b.doSetNX("HSETNX", key, value, field)
 }
 
-/*
-func (b *DaoRedis) HMSet(key string, datas ...interface{}) bool {
-
-	redisResource, err := InitRedisPool()
-
-	if err != nil {
-		return false
-	}
-	defer pool.Put(redisResource)
-
-	redisClient := redisResource.(ResourceConn)
-
-	_, errDo := redisClient.Do("HMSET", b.getKey(key), datas)
-
-	if errDo != nil {
-		UtilLogErrorf("run redis HMSET command failed:%s", errDo.Error())
+//HMSet value是filed:data
+func (b *DaoRedis) HMSet(key string, value map[string]interface{}) bool {
+	_,err:= b.doMSet("HMSet", key, value)
+	if err!=nil{
 		return false
 	}
 	return true
-}*/
+}
 
 func (b *DaoRedis) HLen(key string, data *int) bool {
 	redisResource, err := b.InitRedisPool()
