@@ -335,6 +335,39 @@ func (b *DaoRedis) doIncr(cmd string, key string, value int, fields ...string) (
 	return int(count), true
 }
 
+func (b *DaoRedis) doDel(cmd string,key string,data ...interface{}) error{
+
+	redisResource, err := b.InitRedisPool()
+
+	if err != nil {
+		return err
+	}
+	defer pool.Put(redisResource)
+
+	redisClient := redisResource.(ResourceConn)
+
+	var args []interface{}
+
+	if key !=""{
+			key = b.getKey(key)
+			args = append(args,key)
+	}
+
+	for _,item:= range data{
+		args = append(args,item)
+	}
+
+	_, errDo := redisClient.Do(cmd, args...)
+
+	if errDo != nil {
+
+		UtilLogErrorf("run redis %s command failed:%s",cmd, errDo.Error())
+	}
+
+	return errDo
+}
+/*基础结束*/
+
 func (b *DaoRedis) Set(key string, value interface{}) bool {
 
 	_, err := b.doSet("SET", key, value)
@@ -497,21 +530,9 @@ func (b *DaoRedis) HLen(key string, data *int) bool {
 
 func (b *DaoRedis) HDel(key string, field string) bool {
 
-	redisResource, err := b.InitRedisPool()
+	err := b.doDel("HDel", key, field)
 
 	if err != nil {
-		return false
-	}
-	defer pool.Put(redisResource)
-
-	redisClient := redisResource.(ResourceConn)
-
-	_, errDo := redisClient.Do("HDel", b.getKey(key), field)
-
-	if errDo != nil {
-
-		UtilLogErrorf("run redis HDel command failed:%s", errDo.Error())
-
 		return false
 	}
 
@@ -539,6 +560,16 @@ func (b *DaoRedis) ZAdd(key string, score int, data interface{}) bool {
 	}
 	return true
 }
+
+// sorted set start
+func (b *DaoRedis) ZAddM(key string, value map[string]interface{})bool {
+	_,err:= b.doMSet("ZADD", key, value)
+	if err!=nil{
+		return false
+	}
+	return true
+}
+
 func (b *DaoRedis) ZGet(key string, sort bool, start int, end int, value interface{}) bool {
 
 	var cmd string
@@ -557,6 +588,19 @@ func (b *DaoRedis) ZGet(key string, sort bool, start int, end int, value interfa
 	} else {
 		return false
 	}
+}
+
+func (b *DaoRedis) ZRevRange(key string,start int,end int,value interface{}) bool{
+	return b.ZGet(key, false, start, end, value)
+}
+
+func (b *DaoRedis) ZRem(key string,data ...interface{}) bool{
+	err:= b.doDel("ZREM", key, data...)
+
+	if err!=nil{
+		return false
+	}
+	return true
 }
 
 //list start

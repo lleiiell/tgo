@@ -2,6 +2,7 @@ package tgo
 
 import (
 	"testing"
+	"strconv"
 )
 
 type ModelRedisHello struct {
@@ -30,13 +31,39 @@ func Test_HMSet(t *testing.T){
   datas["2"] = ModelRedisHello{HelloWord:"HelloWord2"}
 
 
-  _,err:=redis.HMSet("hmset1", datas)
+  result:=redis.HMSet("hmset1", datas)
 
-  if err!=nil{
-    t.Errorf("result false:%s",err.Error())
+	if !result{
+    t.Errorf("result false")
   }
-
 }
+
+func Test_ZAddM(t *testing.T){
+	redis:=NewRedisTest()
+
+  datas := make(map[int]int)
+
+  datas[3] = 3
+  datas[2] = 2
+	datas[1] = 1
+
+  result:=redis.ZAddM("zaddm1", datas)
+
+  if !result{
+    t.Errorf("result false")
+  }
+}
+
+func Test_ZRem(t *testing.T){
+	redis:=NewRedisTest()
+
+  result:=redis.ZRem("zaddm1", 1)
+
+  if !result{
+    t.Errorf("result false")
+  }
+}
+
 type TestDaoRedis struct {
 	DaoRedis
 }
@@ -57,11 +84,25 @@ func (c *TestDaoRedis) Get(name string, key *string) bool {
 	return c.DaoRedis.Get(name, key)
 }
 
-func (c *TestDaoRedis) HMSet(key string,value map[string]ModelRedisHello)(interface{},error){
+func (c *TestDaoRedis) HMSet(key string,value map[string]ModelRedisHello)bool{
   datas := make(map[string]interface{})
 
   for k,v := range value{
     datas[k] = v
   }
-  return c.DaoRedis.doMSet("HMSET",key, datas)
+  return c.DaoRedis.HMSet(key, datas)
+}
+
+func (c *TestDaoRedis) ZAddM(key string,value map[int]int)bool{
+	datas := make(map[string]interface{})
+
+  for k,v := range value{
+    datas[strconv.Itoa(k)] = v
+  }
+  return c.DaoRedis.ZAddM(key, datas)
+}
+
+func (c *TestDaoRedis) ZRem(key string, data ...interface{})bool{
+
+	return c.DaoRedis.ZRem(key, data...)
 }
