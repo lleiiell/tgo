@@ -402,6 +402,28 @@ func (m *DaoMongo) Update(condition interface{}, data map[string]interface{}) er
 	return errUpdate
 }
 
+func (m *DaoMongo) UpdateAllSupported(condition map[string]interface{}, update map[string]interface{}) error {
+	session, dbName, err := m.getSession()
+
+	if err != nil {
+		return err
+	}
+
+	defer session.Close()
+
+	coll := session.DB(dbName).C(m.CollectionName)
+
+	update["$currentDate"] = bson.M{"updated_at": true}
+
+	errUpdate := coll.Update(condition, update)
+
+	if errUpdate != nil {
+		errUpdate = m.processError(errUpdate, "mongo %s update failed: %s", m.CollectionName, errUpdate.Error())
+	}
+
+	return errUpdate
+}
+
 func (m *DaoMongo) processError(err error, formatter string, a ...interface{}) error {
 	if err.Error() == "not found" {
 		return nil
