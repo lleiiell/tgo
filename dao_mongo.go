@@ -386,7 +386,7 @@ func (m *DaoMongo) Update(condition interface{}, data map[string]interface{}) er
 	return errUpdate
 }
 
-func (m *DaoMongo) SupportAllUpdate(condition map[string]interface{}, update map[string]interface{}) error {
+func (m *DaoMongo) UpdateAllSupported(condition map[string]interface{}, update map[string]interface{}) error {
 	session, dbName, err := m.getSession()
 
 	if err != nil {
