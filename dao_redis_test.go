@@ -22,6 +22,15 @@ func Test_Call(t *testing.T) {
 	}
 }
 
+func Test_Del(t *testing.T){
+	redis := NewRedisTest()
+
+	result:=redis.Del("tonyjt")
+	if !result {
+		t.Error("result false")
+	}
+}
+
 func Test_HMSet(t *testing.T){
   redis:=NewRedisTest()
 
@@ -82,6 +91,10 @@ func (c *TestDaoRedis) Set(name string, key string) bool {
 
 func (c *TestDaoRedis) Get(name string, key *string) bool {
 	return c.DaoRedis.Get(name, key)
+}
+
+func (c *TestDaoRedis) Del(key string)bool{
+	return c.DaoRedis.Del(key)
 }
 
 func (c *TestDaoRedis) HMSet(key string,value map[string]ModelRedisHello)bool{

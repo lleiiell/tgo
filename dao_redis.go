@@ -408,6 +408,16 @@ func (b *DaoRedis) SetNX(key string, value interface{}) (int64, bool) {
 	return b.doSetNX("SETNX", key, value)
 }
 
+func (b *DaoRedis) Del(key string) bool{
+	err := b.doDel("DEL", key)
+
+	if err != nil {
+		return false
+	}
+
+	return true
+}
+
 //hash start
 func (b *DaoRedis) HIncrby(key string, field string, value int) (int, bool) {
 
