@@ -144,7 +144,6 @@ func (b *DaoRedis) getKey(key string) string {
 	return fmt.Sprintf("%s:%s:%s", prefixRedis, b.KeyName, key)
 }
 
-
 func (b *DaoRedis) doSet(cmd string, key string, value interface{}, fields ...string) (interface{}, error) {
 
 	redisResource, err := b.InitRedisPool()
@@ -182,7 +181,6 @@ func (b *DaoRedis) doSet(cmd string, key string, value interface{}, fields ...st
 	return reply, errDo
 }
 
-
 func (b *DaoRedis) doSetNX(cmd string, key string, value interface{}, field ...string) (int64, bool) {
 
 	reply, err := b.doSet(cmd, key, value, field...)
@@ -212,22 +210,22 @@ func (b *DaoRedis) doMSet(cmd string, key string, value map[string]interface{}) 
 
 	var args []interface{}
 
-	if key !=""{
-			key = b.getKey(key)
-			args = append(args,key)
+	if key != "" {
+		key = b.getKey(key)
+		args = append(args, key)
 	}
 
-	for k,v:=range value{
+	for k, v := range value {
 		data, errJson := json.Marshal(v)
 
 		if errJson != nil {
-			UtilLogErrorf("redis %s marshal data: %v to json:%s", cmd,v, errJson.Error())
+			UtilLogErrorf("redis %s marshal data: %v to json:%s", cmd, v, errJson.Error())
 			return nil, errJson
 		}
-		if key == ""{
-			args = append(args,b.getKey(k),data)
-		}else{
-			args = append(args,k,data)
+		if key == "" {
+			args = append(args, b.getKey(k), data)
+		} else {
+			args = append(args, k, data)
 		}
 
 	}
@@ -260,12 +258,19 @@ func (b *DaoRedis) doGet(cmd string, key string, value interface{}, fields ...st
 	var result interface{}
 	var errDo error
 
-	if len(fields) == 0 {
-		result, errDo = redisClient.Do(cmd, key)
-	} else {
-		field := fields[0]
-		result, errDo = redisClient.Do(cmd, key, field)
+	//if len(fields) == 0 {
+	//	result, errDo = redisClient.Do(cmd, key)
+	//} else {
+	var args []interface{}
+
+	args = append(args, key)
+
+	for _, f := range fields {
+		args = append(args, f)
 	}
+
+	result, errDo = redisClient.Do(cmd, args...)
+	//}
 
 	if errDo != nil {
 
@@ -301,7 +306,7 @@ func (b *DaoRedis) doGet(cmd string, key string, value interface{}, fields ...st
 	return true, nil
 }
 
-func (b *DaoRedis) doMGet(cmd string,args []interface{},value []interface{})error{
+func (b *DaoRedis) doMGet(cmd string, args []interface{}, value []interface{}) error {
 
 	redisResource, err := b.InitRedisPool()
 
@@ -315,27 +320,31 @@ func (b *DaoRedis) doMGet(cmd string,args []interface{},value []interface{})erro
 	result, errDo := redis.ByteSlices(redisClient.Do(cmd, args...))
 
 	if errDo != nil {
-		UtilLogErrorf("run redis %s command failed:%s", cmd,errDo.Error())
+		UtilLogErrorf("run redis %s command failed:%s", cmd, errDo.Error())
 		return errDo
 	}
 
 	if result == nil {
 		return nil
 	}
-	if len(result) >0{
-		for i:=0;i<len(result);i++{
+	if len(result) > 0 {
+
+		for i := 0; i < len(result); i++ {
 			r := result[i]
-			if r !=nil{
+			if i >= len(value) {
+				break
+			}
+			if r != nil {
 				errorJson := json.Unmarshal(r, value[i])
 
 				if errorJson != nil {
 
-					UtilLogErrorf("%s command result failed:%s",cmd, errorJson.Error())
+					UtilLogErrorf("%s command result failed:%s", cmd, errorJson.Error())
 
 					return errorJson
 				}
-			}else{
-					value[i]=nil
+			} else {
+				value[i] = nil
 			}
 
 		}
@@ -383,7 +392,7 @@ func (b *DaoRedis) doIncr(cmd string, key string, value int, fields ...string) (
 	return int(count), true
 }
 
-func (b *DaoRedis) doDel(cmd string,data ...interface{}) error{
+func (b *DaoRedis) doDel(cmd string, data ...interface{}) error {
 
 	redisResource, err := b.InitRedisPool()
 
@@ -398,11 +407,12 @@ func (b *DaoRedis) doDel(cmd string,data ...interface{}) error{
 
 	if errDo != nil {
 
-		UtilLogErrorf("run redis %s command failed:%s",cmd, errDo.Error())
+		UtilLogErrorf("run redis %s command failed:%s", cmd, errDo.Error())
 	}
 
 	return errDo
 }
+
 /*基础结束*/
 
 func (b *DaoRedis) Set(key string, value interface{}) bool {
@@ -415,8 +425,8 @@ func (b *DaoRedis) Set(key string, value interface{}) bool {
 	return true
 }
 func (b *DaoRedis) MSet(datas map[string]interface{}) bool {
-	_,err:= b.doMSet("MSET","", datas)
-	if err!=nil{
+	_, err := b.doMSet("MSET", "", datas)
+	if err != nil {
 		return false
 	}
 	return true
@@ -468,15 +478,15 @@ func (b *DaoRedis) GetE(key string, data interface{}) error {
 
 	return err
 }
-func (b *DaoRedis) MGet(keys []string,data []interface{})error{
+func (b *DaoRedis) MGet(keys []string, data []interface{}) error {
 
 	var args []interface{}
 
-	for _,v:=range keys{
-			args = append(args,b.getKey(v))
+	for _, v := range keys {
+		args = append(args, b.getKey(v))
 	}
 
-	err:= b.doMGet("MGET",args,data)
+	err := b.doMGet("MGET", args, data)
 
 	return err
 }
@@ -495,7 +505,7 @@ func (b *DaoRedis) SetNX(key string, value interface{}) (int64, bool) {
 	return b.doSetNX("SETNX", key, value)
 }
 
-func (b *DaoRedis) Del(key string) bool{
+func (b *DaoRedis) Del(key string) bool {
 
 	key = b.getKey(key)
 
@@ -532,16 +542,16 @@ func (b *DaoRedis) HGetE(key string, field string, value interface{}) error {
 	return err
 }
 
-func (b *DaoRedis) HMGet(key string, fields []interface{},data []interface{}) error {
+func (b *DaoRedis) HMGet(key string, fields []interface{}, data []interface{}) error {
 	var args []interface{}
 
-	args = append(args,b.getKey(key))
+	args = append(args, b.getKey(key))
 
-	for _,v:=range fields{
-			args = append(args,v)
+	for _, v := range fields {
+		args = append(args, v)
 	}
 
-	err:= b.doMGet("HMGET",args,data)
+	err := b.doMGet("HMGET", args, data)
 
 	return err
 }
@@ -562,8 +572,8 @@ func (b *DaoRedis) HSetNX(key string, field string, value interface{}) (int64, b
 
 //HMSet value是filed:data
 func (b *DaoRedis) HMSet(key string, value map[string]interface{}) bool {
-	_,err:= b.doMSet("HMSet", key, value)
-	if err!=nil{
+	_, err := b.doMSet("HMSet", key, value)
+	if err != nil {
 		return false
 	}
 	return true
@@ -598,17 +608,17 @@ func (b *DaoRedis) HLen(key string, data *int) bool {
 	return resultConv
 }
 
-func (b *DaoRedis) HDel(key string,data ...interface{}) bool {
+func (b *DaoRedis) HDel(key string, data ...interface{}) bool {
 	var args []interface{}
 
 	key = b.getKey(key)
-	args = append(args,key)
+	args = append(args, key)
 
-	for _,item:= range data{
-		args = append(args,item)
+	for _, item := range data {
+		args = append(args, item)
 	}
 
-	err := b.doDel("HDEL",args...)
+	err := b.doDel("HDEL", args...)
 
 	if err != nil {
 		return false
@@ -640,15 +650,15 @@ func (b *DaoRedis) ZAdd(key string, score int, data interface{}) bool {
 }
 
 // sorted set start
-func (b *DaoRedis) ZAddM(key string, value map[string]interface{})bool {
-	_,err:= b.doMSet("ZADD", key, value)
-	if err!=nil{
+func (b *DaoRedis) ZAddM(key string, value map[string]interface{}) bool {
+	_, err := b.doMSet("ZADD", key, value)
+	if err != nil {
 		return false
 	}
 	return true
 }
 
-func (b *DaoRedis) ZGet(key string, sort bool, start int, end int, value interface{}) bool {
+func (b *DaoRedis) ZGet(key string, sort bool, start int, end int, value []interface{}) error {
 
 	var cmd string
 	if sort {
@@ -657,35 +667,33 @@ func (b *DaoRedis) ZGet(key string, sort bool, start int, end int, value interfa
 		cmd = "ZREVRANGE"
 	}
 
-	strStart := strconv.Itoa(start)
-	strEnd := strconv.Itoa(end)
-	_, err := b.doGet(cmd, key, value, strStart, strEnd)
+	var args []interface{}
+	args = append(args, b.getKey(key))
+	args = append(args, start)
+	args = append(args, end)
+	err := b.doMGet(cmd, args, value)
 
-	if err == nil {
-		return true
-	} else {
-		return false
-	}
+	return err
 }
 
-func (b *DaoRedis) ZRevRange(key string,start int,end int,value interface{}) bool{
+func (b *DaoRedis) ZRevRange(key string, start int, end int, value []interface{}) error {
 	return b.ZGet(key, false, start, end, value)
 }
 
-func (b *DaoRedis) ZRem(key string,data ...interface{}) bool{
+func (b *DaoRedis) ZRem(key string, data ...interface{}) bool {
 
 	var args []interface{}
 
 	key = b.getKey(key)
-	args = append(args,key)
+	args = append(args, key)
 
-	for _,item:= range data{
-		args = append(args,item)
+	for _, item := range data {
+		args = append(args, item)
 	}
 
-	err:= b.doDel("ZREM", args...)
+	err := b.doDel("ZREM", args...)
 
-	if err!=nil{
+	if err != nil {
 		return false
 	}
 	return true
