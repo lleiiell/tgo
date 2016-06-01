@@ -301,62 +301,46 @@ func (b *DaoRedis) doGet(cmd string, key string, value interface{}, fields ...st
 	return true, nil
 }
 
-func (b *DaoRedis) doMGet(cmd string,key string,value interface{},fields ...string)(map[string]interface{},error){
+func (b *DaoRedis) doMGet(cmd string,args []interface{},value []interface{})error{
 
 	redisResource, err := b.InitRedisPool()
 
 	if err != nil {
-		return nil,err
+		return err
 	}
 	defer pool.Put(redisResource)
 
 	redisClient := redisResource.(ResourceConn)
 
-	var args []interface{}
-
-	if key !=""{
-			key = b.getKey(key)
-			args = append(args,key)
-	}
-
-	for _,v:=range fields{
-		if key == ""{
-			args = append(args,b.getKey(v))
-		}else{
-			args = append(args,v)
-		}
-	}
-
 	result, errDo := redis.ByteSlices(redisClient.Do(cmd, args...))
 
 	if errDo != nil {
 		UtilLogErrorf("run redis %s command failed:%s", cmd,errDo.Error())
-		return nil,errDo
+		return errDo
 	}
 
 	if result == nil {
-		return nil,nil
+		return nil
 	}
-
-	data := make(map[string]interface{})
 	if len(result) >0{
-
 		for i:=0;i<len(result);i++{
-			v := result[i]
-			if v !=nil{
-				errorJson := json.Unmarshal(v, &value)
+			r := result[i]
+			if r !=nil{
+				errorJson := json.Unmarshal(r, value[i])
 
 				if errorJson != nil {
 
 					UtilLogErrorf("%s command result failed:%s",cmd, errorJson.Error())
 
-					return nil,errorJson
+					return errorJson
 				}
-				data[fields[i]]= value
+			}else{
+					value[i]=nil
 			}
+
 		}
 	}
-	return data,nil
+	return nil
 }
 
 func (b *DaoRedis) doIncr(cmd string, key string, value int, fields ...string) (int, bool) {
@@ -453,13 +437,17 @@ func (b *DaoRedis) GetE(key string, data interface{}) error {
 
 	return err
 }
-func (b *DaoRedis) MGet(keys []string,data interface{})(map[string]interface{},bool){
-	value,err:= b.doMGet("MGET", "", data, keys...)
+func (b *DaoRedis) MGet(keys []string,data []interface{})error{
 
-	if err!=nil{
-		return nil,false
+	var args []interface{}
+
+	for _,v:=range keys{
+			args = append(args,b.getKey(v))
 	}
-	return value,true
+
+	err:= b.doMGet("MGET",args,data)
+
+	return err
 }
 
 func (b *DaoRedis) Incr(key string) (int, bool) {
@@ -513,48 +501,18 @@ func (b *DaoRedis) HGetE(key string, field string, value interface{}) error {
 	return err
 }
 
-func (b *DaoRedis) HMGet(key string, value interface{}, fields ...string) bool {
-	redisResource, err := b.InitRedisPool()
+func (b *DaoRedis) HMGet(key string, fields []interface{},data []interface{}) error {
+	var args []interface{}
 
-	if err != nil {
-		return false
-	}
-	defer pool.Put(redisResource)
+	args = append(args,b.getKey(key))
 
-	redisClient := redisResource.(ResourceConn)
-
-	key = b.getKey(key)
-
-	var result interface{}
-	var errDo error
-
-	if len(fields) == 0 {
-		return false
-	} else {
-		result, errDo = redisClient.Do("HMGET", redis.Args{}.Add(key).AddFlat(fields)...)
+	for _,v:=range fields{
+			args = append(args,v)
 	}
 
-	if errDo != nil {
+	err:= b.doMGet("HMGET",args,data)
 
-		UtilLogErrorf("run redis HMGET command failed:%s", errDo.Error())
-		return false
-	}
-
-	if result == nil {
-		value = nil
-		return false
-	}
-
-	errorJson := json.Unmarshal(result.([]byte), value)
-
-	if errorJson != nil {
-
-		UtilLogErrorf("HMGET command result failed:%s", errorJson.Error())
-
-		return false
-	}
-
-	return true
+	return err
 }
 
 func (b *DaoRedis) HSet(key string, field string, value interface{}) bool {
