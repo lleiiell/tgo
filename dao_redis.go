@@ -422,6 +422,37 @@ func (b *DaoRedis) MSet(datas map[string]interface{}) bool {
 	return true
 }
 
+func (b *DaoRedis) SetEx(key string, value interface{}, time int) bool {
+
+	_, err := b.doSet("SET", key, value)
+
+	if err != nil {
+		return false
+	}
+	e := b.Expire(key, time)
+	if e {
+		return true
+	} else {
+		return false
+	}
+}
+
+func (b *DaoRedis) Expire(key string, time int) bool {
+	redisResource, err := b.InitRedisPool()
+	if err != nil {
+		return false
+	}
+	key = b.getKey(key)
+	defer pool.Put(redisResource)
+	redisClient := redisResource.(ResourceConn)
+	_, err = redisClient.Do("EXPIRE", key, time)
+	if err != nil {
+		return false
+	}
+
+	return true
+}
+
 func (b *DaoRedis) Get(key string, data interface{}) bool {
 
 	result, err := b.doGet("GET", key, data)
