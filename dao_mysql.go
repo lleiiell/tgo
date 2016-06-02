@@ -37,7 +37,7 @@ func initMysql(isRead bool) (*gorm.DB, error) {
 		dbConfig = config.Mysql.GetWrite()
 	}
 	//user:password@tcp(172.172.177.15:3306)dbname?charset=utf8
-	connectionString := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8&parseTime=True&loc=Local", dbConfig.User, dbConfig.Password, dbConfig.Address, dbConfig.Port, dbConfig.DbName)
+	connectionString := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4,utf8&parseTime=True&loc=Local", dbConfig.User, dbConfig.Password, dbConfig.Address, dbConfig.Port, dbConfig.DbName)
 	//connectionString := dbConfig.User + ":" + dbConfig.Password + "@tcp(" + dbConfig.Address + ":" + dbConfig.Port + ")" + dbConfig.DbName + "?charset=utf8"
 
 	db, err := gorm.Open("mysql", connectionString)
