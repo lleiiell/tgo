@@ -6,7 +6,7 @@ import (
 )
 
 func UtilRequestGetParam(c *gin.Context, key string) string {
-	if c.Request.Method == "GET" {
+	if c.Request.Method == "GET" || c.Request.Method == "DELETE" {
 		return c.Query(key)
 	}
 	return c.PostForm(key)
