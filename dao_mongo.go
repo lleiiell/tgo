@@ -47,6 +47,7 @@ func (m *DaoMongo) getSession() (*mgo.Session, string, error) {
 		if sessionMongo == nil {
 
 			if configMongo == nil || configMongo.Servers == "" || configMongo.DbName == "" {
+				m.processError(errors.New("Mongo Config Error"), "configMongo error")
 				return nil, "", errors.New("config error")
 			}
 
@@ -83,6 +84,7 @@ func (m *DaoMongo) getSession() (*mgo.Session, string, error) {
 			mgo.SetDebug(true)
 		}*/
 
+	m.processError(errors.New("Mongo Error"), "session mongo is nul" )
 	return nil, configMongo.DbName, errors.New("session mongo is nul")
 }
 func (m *DaoMongo) GetId() (int64, error) {
