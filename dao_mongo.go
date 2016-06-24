@@ -3,11 +3,12 @@ package tgo
 import (
 	"errors"
 	"fmt"
-	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
 	"strings"
 	"sync"
 	"time"
+
+	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 )
 
 type DaoMongo struct {
@@ -47,6 +48,7 @@ func (m *DaoMongo) getSession() (*mgo.Session, string, error) {
 		if sessionMongo == nil {
 
 			if configMongo == nil || configMongo.Servers == "" || configMongo.DbName == "" {
+				m.processError(errors.New("Mongo Config Error"), "configMongo error")
 				return nil, "", errors.New("config error")
 			}
 
@@ -83,6 +85,7 @@ func (m *DaoMongo) getSession() (*mgo.Session, string, error) {
 			mgo.SetDebug(true)
 		}*/
 
+	m.processError(errors.New("Mongo Error"), "session mongo is nul")
 	return nil, configMongo.DbName, errors.New("session mongo is nul")
 }
 func (m *DaoMongo) GetId() (int64, error) {
@@ -162,7 +165,7 @@ func (m *DaoMongo) Insert(data IModelMongo) error {
 	}
 
 	// 是否初始化时间
-	created_at := data.GetCreatedTime();
+	created_at := data.GetCreatedTime()
 	if created_at.Equal(time.Time{}) {
 		data.InitTime(time.Now())
 	}
@@ -202,7 +205,7 @@ func (m *DaoMongo) InsertM(data []IModelMongo) error {
 		}
 
 		// 是否初始化时间
-		created_at := item.GetCreatedTime();
+		created_at := item.GetCreatedTime()
 		if created_at.Equal(time.Time{}) {
 			item.InitTime(time.Now())
 		}
@@ -300,6 +303,40 @@ func (m *DaoMongo) Distinct(condition interface{}, field string, data interface{
 	defer session.Close()
 
 	errDistinct := session.DB(dbName).C(m.CollectionName).Find(condition).Distinct(field, data)
+
+	if errDistinct != nil {
+
+		errDistinct = m.processError(errDistinct, "mongo %s distinct failed:%s", m.CollectionName, errDistinct.Error())
+
+	}
+
+	return errDistinct
+}
+
+func (m *DaoMongo) DistinctWithPage(condition interface{}, field string, limit int, skip int, data interface{}, sortFields ...string) error {
+	session, dbName, err := m.getSession()
+
+	if err != nil {
+		return err
+	}
+
+	defer session.Close()
+
+	s := session.DB(dbName).C(m.CollectionName).Find(condition)
+
+	if len(sortFields) > 0 {
+		s = s.Sort(sortFields...)
+	}
+
+	if skip > 0 {
+		s = s.Skip(skip)
+	}
+
+	if limit > 0 {
+		s = s.Limit(limit)
+	}
+
+	errDistinct := s.Distinct(field, data)
 
 	if errDistinct != nil {
 
