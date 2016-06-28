@@ -269,9 +269,10 @@ func (m *DaoMongo) Find(condition interface{}, limit int, skip int, data interfa
 
 	s := session.DB(dbName).C(m.CollectionName).Find(condition)
 
-	if len(sortFields) > 0 {
-		s = s.Sort(sortFields...)
+	if len(sortFields) == 0 {
+		sortFields=append(sortFields,"-_id")
 	}
+	s = s.Sort(sortFields...)
 
 	if skip > 0 {
 		s = s.Skip(skip)

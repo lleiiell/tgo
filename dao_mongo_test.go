@@ -72,3 +72,20 @@ func Test_MongoDistinctPage(t *testing.T) {
 		t.Errorf("data is %v",modelList)
 	}
 }
+
+func Test_MongoFind(t *testing.T){
+	mongo := NewMongoTest()
+	condition :=bson.M{}
+	limit:=0
+	skip:=0
+	var sortFileds []string
+	var data []ModelMongoHello
+
+	err:=mongo.DaoMongo.Find(condition,limit,skip,&data,sortFileds...)
+
+	if err!=nil{
+		t.Errorf("mogno find error,%s",err.Error())
+	}else{
+		t.Errorf("data is %v",data)
+	}
+}
