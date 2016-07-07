@@ -36,6 +36,16 @@
 			"Rev": "66312f7fe2678aa0f5ec770f96702f4c4ec5aa8e"
 		},
 		{
+			"ImportPath": "github.com/go-stomp/stomp",
+			"Comment": "v1.0.1-37-g64f6322",
+			"Rev": "64f6322840b955feb307a22abbeef6606215b40a"
+		},
+		{
+			"ImportPath": "github.com/go-stomp/stomp/frame",
+			"Comment": "v1.0.1-37-g64f6322",
+			"Rev": "64f6322840b955feb307a22abbeef6606215b40a"
+		},
+		{
 			"ImportPath": "github.com/golang/glog",
 			"Rev": "23def4e6c14b4da8ac2ed8007337bc5eb5007998"
 		},

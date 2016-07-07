@@ -34,7 +34,6 @@ func UtilLogError(msg interface{}) {
 	initLog()
 
 	//defer l4g.Close()
-
 	l4g.Error(msg)
 
 }
@@ -45,17 +44,12 @@ func UtilLogErrorf(format string, a ...interface{}) {
 
 	initLog()
 
-	//defer l4g.Close()
-
 	l4g.Error(msg)
 
 }
 
 func UtilLogInfo(msg interface{}) {
-
 	initLog()
-
-	//defer l4g.Close()
 
 	l4g.Info(msg)
 
@@ -90,4 +84,21 @@ func UtilLogDebugf(format string, a ...interface{}) {
 	//defer l4g.Close()
 
 	l4g.Debug(msg)
+}
+
+
+type Log struct{
+
+}
+
+func NewUtilLog()*Log{
+  return &Log{}
+}
+
+func (l *Log) Error(format string, a ...interface{}){
+  UtilLogErrorf(format, a...)
+}
+
+func (l *Log) Info(format string, a ...interface{}){
+  UtilLogInfof(format, a...)
 }

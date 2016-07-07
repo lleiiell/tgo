@@ -10,6 +10,10 @@ type ModelMongo struct {
 	Updated_at time.Time `bson:"updated_at,omitempty"`
 }
 
+func (m *ModelMongo) GetCreatedTime() time.Time {
+	return m.Created_at
+}
+
 func (m *ModelMongo) InitTime(t time.Time) {
 	m.Created_at = t
 	m.Updated_at = t

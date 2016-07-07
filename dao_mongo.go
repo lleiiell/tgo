@@ -3,11 +3,12 @@ package tgo
 import (
 	"errors"
 	"fmt"
-	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
 	"strings"
 	"sync"
 	"time"
+
+	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 )
 
 type DaoMongo struct {
@@ -33,7 +34,7 @@ var (
 	sessionMongoMux sync.Mutex
 )
 
-func (m *DaoMongo) getSession() (*mgo.Session, string, error) {
+func (m *DaoMongo) GetSession() (*mgo.Session, string, error) {
 
 	config := NewConfigDb()
 
@@ -47,6 +48,7 @@ func (m *DaoMongo) getSession() (*mgo.Session, string, error) {
 		if sessionMongo == nil {
 
 			if configMongo == nil || configMongo.Servers == "" || configMongo.DbName == "" {
+				m.processError(errors.New("Mongo Config Error"), "configMongo error")
 				return nil, "", errors.New("config error")
 			}
 
@@ -83,12 +85,15 @@ func (m *DaoMongo) getSession() (*mgo.Session, string, error) {
 			mgo.SetDebug(true)
 		}*/
 
+	m.processError(errors.New("Mongo Error"), "session mongo is nul")
 	return nil, configMongo.DbName, errors.New("session mongo is nul")
 }
-
+func (m *DaoMongo) GetId() (int64, error) {
+	return m.GetNextSequence()
+}
 func (m *DaoMongo) GetNextSequence() (int64, error) {
 
-	session, dbName, err := m.getSession()
+	session, dbName, err := m.GetSession()
 
 	if err != nil {
 		return 0, err
@@ -117,15 +122,21 @@ func (m *DaoMongo) GetNextSequence() (int64, error) {
 
 	setInt, resultNext := result["seq"].(int)
 
+	var seq int64
 	if !resultNext {
-		UtilLogErrorf("mongo findAndModify get counter %sfailed", m.CollectionName)
+		seq, resultNext = result["seq"].(int64)
+
+		if !resultNext {
+			UtilLogErrorf("mongo findAndModify get counter %s failed", m.CollectionName)
+		}
+	} else {
+		seq = int64(setInt)
 	}
-	seq := int64(setInt)
 
 	return seq, nil
 }
 func (m *DaoMongo) GetById(id int64, data interface{}) error {
-	session, dbName, err := m.getSession()
+	session, dbName, err := m.GetSession()
 
 	if err != nil {
 		return err
@@ -153,9 +164,13 @@ func (m *DaoMongo) Insert(data IModelMongo) error {
 		data.SetId(id)
 	}
 
-	data.InitTime(time.Now())
+	// 是否初始化时间
+	created_at := data.GetCreatedTime()
+	if created_at.Equal(time.Time{}) {
+		data.InitTime(time.Now())
+	}
 
-	session, dbName, err := m.getSession()
+	session, dbName, err := m.GetSession()
 
 	if err != nil {
 		return err
@@ -189,10 +204,14 @@ func (m *DaoMongo) InsertM(data []IModelMongo) error {
 			item.SetId(id)
 		}
 
-		item.InitTime(time.Now())
+		// 是否初始化时间
+		created_at := item.GetCreatedTime()
+		if created_at.Equal(time.Time{}) {
+			item.InitTime(time.Now())
+		}
 	}
 
-	session, dbName, err := m.getSession()
+	session, dbName, err := m.GetSession()
 
 	if err != nil {
 		return err
@@ -220,7 +239,7 @@ func (m *DaoMongo) InsertM(data []IModelMongo) error {
 
 func (m *DaoMongo) Count(condition interface{}) (int, error) {
 
-	session, dbName, err := m.getSession()
+	session, dbName, err := m.GetSession()
 
 	if err != nil {
 		return 0, err
@@ -240,7 +259,7 @@ func (m *DaoMongo) Count(condition interface{}) (int, error) {
 
 func (m *DaoMongo) Find(condition interface{}, limit int, skip int, data interface{}, sortFields ...string) error {
 
-	session, dbName, err := m.getSession()
+	session, dbName, err := m.GetSession()
 
 	if err != nil {
 		return err
@@ -250,9 +269,10 @@ func (m *DaoMongo) Find(condition interface{}, limit int, skip int, data interfa
 
 	s := session.DB(dbName).C(m.CollectionName).Find(condition)
 
-	if len(sortFields) > 0 {
-		s = s.Sort(sortFields...)
+	if len(sortFields) == 0 {
+		sortFields=append(sortFields,"-_id")
 	}
+	s = s.Sort(sortFields...)
 
 	if skip > 0 {
 		s = s.Skip(skip)
@@ -275,7 +295,7 @@ func (m *DaoMongo) Find(condition interface{}, limit int, skip int, data interfa
 
 func (m *DaoMongo) Distinct(condition interface{}, field string, data interface{}) error {
 
-	session, dbName, err := m.getSession()
+	session, dbName, err := m.GetSession()
 
 	if err != nil {
 		return err
@@ -294,8 +314,80 @@ func (m *DaoMongo) Distinct(condition interface{}, field string, data interface{
 	return errDistinct
 }
 
+func (m *DaoMongo) DistinctWithPage(condition interface{}, field string, limit int, skip int, data interface{}, sortFields map[string]bool) error {
+	session, dbName, err := m.GetSession()
+
+	if err != nil {
+		return err
+	}
+
+	defer session.Close()
+	/*
+	s := session.DB(dbName).C(m.CollectionName).Find(condition)
+
+	if len(sortFields) > 0 {
+		s = s.Sort(sortFields...)
+	}
+
+	if skip > 0 {
+		s = s.Skip(skip)
+	}
+
+	if limit > 0 {
+		s = s.Limit(limit)
+	}
+
+	errDistinct := s.Distinct(field, data)
+	*/
+
+	var pipeSlice []bson.M
+
+	pipeSlice = append(pipeSlice,bson.M{"$match": condition})
+
+	if sortFields!=nil&&len(sortFields) >0{
+		bmSort:= bson.M{}
+
+		for k,v := range sortFields{
+			var vInt int
+			if v{
+				vInt =1
+			}else{
+				vInt = -1
+			}
+			bmSort[k] = vInt
+		}
+
+		pipeSlice = append(pipeSlice,bson.M{"$sort":bmSort})
+	}
+
+	if skip>0{
+		pipeSlice = append(pipeSlice,bson.M{"$skip":skip})
+	}
+
+	if limit>0{
+		pipeSlice = append(pipeSlice,bson.M{"$limit":limit})
+	}
+
+
+	pipeSlice = append(pipeSlice,bson.M{"$group":bson.M{"_id":fmt.Sprintf("$%s", field)}})
+
+	pipeSlice = append(pipeSlice,bson.M{"$project":bson.M{field:"$_id"}})
+
+	coll := session.DB(dbName).C(m.CollectionName)
+
+	pipe := coll.Pipe(pipeSlice)
+
+	errPipe := pipe.All(data)
+
+	if errPipe != nil {
+		errPipe = m.processError(errPipe, "mongo %s distinct page failed: %s", m.CollectionName, errPipe.Error())
+	}
+
+	return nil
+}
+
 func (m *DaoMongo) Sum(condition interface{}, sumField string) (int, error) {
-	session, dbName, err := m.getSession()
+	session, dbName, err := m.GetSession()
 
 	if err != nil {
 		return 0, err
@@ -328,7 +420,7 @@ func (m *DaoMongo) Sum(condition interface{}, sumField string) (int, error) {
 }
 
 func (m *DaoMongo) DistinctCount(condition interface{}, field string) (int, error) {
-	session, dbName, err := m.getSession()
+	session, dbName, err := m.GetSession()
 
 	if err != nil {
 		return 0, err
@@ -360,7 +452,7 @@ func (m *DaoMongo) DistinctCount(condition interface{}, field string) (int, erro
 }
 
 func (m *DaoMongo) Update(condition interface{}, data map[string]interface{}) error {
-	session, dbName, err := m.getSession()
+	session, dbName, err := m.GetSession()
 
 	if err != nil {
 		return err
@@ -387,7 +479,7 @@ func (m *DaoMongo) Update(condition interface{}, data map[string]interface{}) er
 }
 
 func (m *DaoMongo) UpdateAllSupported(condition map[string]interface{}, update map[string]interface{}) error {
-	session, dbName, err := m.getSession()
+	session, dbName, err := m.GetSession()
 
 	if err != nil {
 		return err
