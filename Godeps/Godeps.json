@@ -117,6 +117,21 @@
 			"ImportPath": "gopkg.in/mgo.v2/internal/scram",
 			"Comment": "r2016.02.04-1-gb6e2fa3",
 			"Rev": "b6e2fa371e64216a45e61072a96d4e3859f169da"
+		},
+		{
+			"ImportPath": "gopkg.in/olivere/elastic.v3",
+			"Comment": "v3.0.42",
+			"Rev": "d8c80d884c60d6844d3042cf1697998f34c25e37"
+		},
+		{
+			"ImportPath": "gopkg.in/olivere/elastic.v3/backoff",
+			"Comment": "v3.0.42",
+			"Rev": "d8c80d884c60d6844d3042cf1697998f34c25e37"
+		},
+		{
+			"ImportPath": "gopkg.in/olivere/elastic.v3/uritemplates",
+			"Comment": "v3.0.42",
+			"Rev": "d8c80d884c60d6844d3042cf1697998f34c25e37"
 		}
 	]
 }
