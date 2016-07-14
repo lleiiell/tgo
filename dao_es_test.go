@@ -23,7 +23,7 @@ func Test_ESInsert(t *testing.T) {
 	model.HelloWord = "1"
 	model.Name = "name2"
 
-	err := es.DaoES.Insert(model)
+	err := es.DaoES.Insert("1",model)
 
 	if err != nil {
 		t.Errorf("insert error:%s", err.Error())

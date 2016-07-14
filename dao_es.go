@@ -25,14 +25,12 @@ func (dao *DaoES) GetConnect()(*elastic.Client, error){
   return client,err
 }
 
-func (dao *DaoES) Insert(data IModelES) error{
+func (dao *DaoES) Insert(id string,data interface{}) error{
   client, err := dao.GetConnect()
 
 	if err != nil {
 		return err
 	}
-
-	id := string(data.GetId())
 
 	_, errRes := client.Index().Index(dao.IndexName).Type(dao.TypeName).Id(id).BodyJson(data).Do()
 
