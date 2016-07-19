@@ -49,7 +49,10 @@ func ConfigAppGetString(key string, defaultConfig string) string {
 
 	config := ConfigAppGet(key)
 
-	configStr := config.(string)
+	var configStr string
+	if config != nil {
+		configStr = config.(string)
+	}
 
 	if UtilIsEmpty(configStr) {
 		configStr = defaultConfig
