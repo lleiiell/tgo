@@ -1,32 +1,55 @@
 package tgo
 
 import (
-  "gopkg.in/olivere/elastic.v3"
+	"net/http"
+	"sync"
+	"time"
+
+	"gopkg.in/olivere/elastic.v3"
 )
 
 type DaoES struct {
 	IndexName string
-  TypeName string
+	TypeName  string
 }
 
-func (dao *DaoES) GetConnect()(*elastic.Client, error){
+var (
+	esTransport *http.Transport
+	esPoolMux   sync.Mutex
+)
 
-  address:=configESGetAddress()
+func (dao *DaoES) GetConnect() (*elastic.Client, error) {
 
-	client, err := elastic.NewClient(elastic.SetSniff(false), elastic.SetURL(address...))
+	address := configESGetAddress()
+
+	if esTransport == nil {
+		esPoolMux.Lock()
+		defer esPoolMux.Unlock()
+		if esTransport == nil {
+			esTransport = &http.Transport{
+				MaxIdleConnsPerHost: 50,
+			}
+		}
+	}
+	clientHttp := &http.Client{
+		Transport: esTransport,
+		Timeout:   time.Duration(1000) * time.Millisecond,
+	}
+
+	client, err := elastic.NewClient(elastic.SetHttpClient(clientHttp), elastic.SetSniff(false), elastic.SetURL(address...))
 
 	if err != nil {
 		// Handle error
 
-		UtilLogErrorf("es connect error :%s,address:%v", err.Error(),address)
+		UtilLogErrorf("es connect error :%s,address:%v", err.Error(), address)
 
 		return nil, err
 	}
-  return client,err
+	return client, err
 }
 
-func (dao *DaoES) Insert(id string,data interface{}) error{
-  client, err := dao.GetConnect()
+func (dao *DaoES) Insert(id string, data interface{}) error {
+	client, err := dao.GetConnect()
 
 	if err != nil {
 		return err
