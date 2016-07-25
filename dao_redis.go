@@ -20,7 +20,7 @@ type DaoRedis struct {
 }
 
 var (
-	pool         *pools.ResourcePool
+	redisPool         *pools.ResourcePool
 	redisPoolMux sync.Mutex
 )
 
@@ -62,13 +62,13 @@ func (b *DaoRedis) dail() (redis.Conn, error) {
 }
 func (b *DaoRedis) InitRedisPool() (pools.Resource, error) {
 
-	if pool == nil || pool.IsClosed() {
+	if redisPool == nil || redisPool.IsClosed() {
 
 		redisPoolMux.Lock()
 
 		defer redisPoolMux.Unlock()
 
-		if pool == nil {
+		if redisPool == nil {
 
 			cacheConfig := ConfigCacheGetRedis()
 
@@ -76,13 +76,13 @@ func (b *DaoRedis) InitRedisPool() (pools.Resource, error) {
 				cacheConfig.PoolMinActive = 1
 			}
 
-			pool = pools.NewResourcePool(func() (pools.Resource, error) {
+			redisPool = pools.NewResourcePool(func() (pools.Resource, error) {
 				c, err := b.dail()
 				return ResourceConn{c}, err
 			}, cacheConfig.PoolMinActive, cacheConfig.PoolMaxActive, time.Duration(cacheConfig.PoolIdleTimeout)*time.Millisecond)
 		}
 	}
-	if pool != nil {
+	if redisPool != nil {
 		var r pools.Resource
 		var err error
 		/*
@@ -99,7 +99,7 @@ func (b *DaoRedis) InitRedisPool() (pools.Resource, error) {
 
 		ctx := context.TODO()
 
-		r, err = pool.Get(ctx)
+		r, err = redisPool.Get(ctx)
 
 		if err != nil {
 			UtilLogErrorf("redis get connection err:%s", err.Error())
@@ -154,7 +154,7 @@ func (b *DaoRedis) doSet(cmd string, key string, value interface{}, fields ...st
 
 	key = b.getKey(key)
 
-	defer pool.Put(redisResource)
+	defer redisPool.Put(redisResource)
 
 	redisClient := redisResource.(ResourceConn)
 
@@ -206,7 +206,7 @@ func (b *DaoRedis) doMSet(cmd string, key string, value map[string]interface{}) 
 	if err != nil {
 		return nil, err
 	}
-	defer pool.Put(redisResource)
+	defer redisPool.Put(redisResource)
 
 	var args []interface{}
 
@@ -249,7 +249,7 @@ func (b *DaoRedis) doGet(cmd string, key string, value interface{}, fields ...st
 	if err != nil {
 		return false, err
 	}
-	defer pool.Put(redisResource)
+	defer redisPool.Put(redisResource)
 
 	redisClient := redisResource.(ResourceConn)
 
@@ -313,7 +313,7 @@ func (b *DaoRedis) doMGet(cmd string, args []interface{}, value []interface{}) e
 	if err != nil {
 		return err
 	}
-	defer pool.Put(redisResource)
+	defer redisPool.Put(redisResource)
 
 	redisClient := redisResource.(ResourceConn)
 
@@ -359,7 +359,7 @@ func (b *DaoRedis) doIncr(cmd string, key string, value int, fields ...string) (
 	if err != nil {
 		return 0, false
 	}
-	defer pool.Put(redisResource)
+	defer redisPool.Put(redisResource)
 
 	redisClient := redisResource.(ResourceConn)
 
@@ -399,7 +399,7 @@ func (b *DaoRedis) doDel(cmd string, data ...interface{}) error {
 	if err != nil {
 		return err
 	}
-	defer pool.Put(redisResource)
+	defer redisPool.Put(redisResource)
 
 	redisClient := redisResource.(ResourceConn)
 
@@ -453,7 +453,7 @@ func (b *DaoRedis) Expire(key string, time int) bool {
 		return false
 	}
 	key = b.getKey(key)
-	defer pool.Put(redisResource)
+	defer redisPool.Put(redisResource)
 	redisClient := redisResource.(ResourceConn)
 	_, err = redisClient.Do("EXPIRE", key, time)
 	if err != nil {
@@ -585,7 +585,7 @@ func (b *DaoRedis) HLen(key string, data *int) bool {
 	if err != nil {
 		return false
 	}
-	defer pool.Put(redisResource)
+	defer redisPool.Put(redisResource)
 
 	redisClient := redisResource.(ResourceConn)
 
@@ -636,7 +636,7 @@ func (b *DaoRedis) ZAdd(key string, score int, data interface{}) bool {
 	if err != nil {
 		return false
 	}
-	defer pool.Put(redisResource)
+	defer redisPool.Put(redisResource)
 
 	redisClient := redisResource.(ResourceConn)
 
@@ -721,7 +721,7 @@ func (b *DaoRedis) LREM(key string, count int, data interface{}) int {
 	if err != nil {
 		return 0
 	}
-	defer pool.Put(redisResource)
+	defer redisPool.Put(redisResource)
 
 	redisClient := redisResource.(ResourceConn)
 

@@ -42,6 +42,7 @@ func Benchmark_ESQuery(b *testing.B) {
 			if err != nil {
 				b.Errorf("connect error:%s", err.Error())
 			}
+
 			var searchResult *elastic.SearchResult
 			searchResult, err = conn.Search().Index(es.IndexName).Do()
 
@@ -59,7 +60,7 @@ func Benchmark_ESQuery(b *testing.B) {
 					b.Errorf("len is 0")
 				}
 			}
-
+			es.DaoES.CloseConnect(conn)
 		}
 	})
 }
