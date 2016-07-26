@@ -478,6 +478,26 @@ func (m *DaoMongo) Update(condition interface{}, data map[string]interface{}) er
 	return errUpdate
 }
 
+func (m *DaoMongo) RemoveId(id interface{}) error {
+	session, dbName, err := m.GetSession()
+
+	if err != nil {
+		return err
+	}
+
+	defer session.Close()
+
+	coll := session.DB(dbName).C(m.CollectionName)
+
+	errRemove := coll.RemoveId(id)
+
+	if errRemove != nil {
+		errRemove = m.processError(errRemove, "mongo %s removeId failed: %s, id:%v", m.CollectionName, errRemove.Error(), id)
+	}
+
+	return errRemove
+}
+
 func (m *DaoMongo) UpdateAllSupported(condition map[string]interface{}, update map[string]interface{}) error {
 	session, dbName, err := m.GetSession()
 
