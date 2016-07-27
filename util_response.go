@@ -9,6 +9,9 @@ import (
 
 func UtilResponseReturnJson(c *gin.Context, code int, model interface{}) {
 
+	if code == 0 {
+		code = 1001
+	}
 	msg := ConfigCodeGetMessage(code)
 
 	UtilResponseReturnJsonWithMsg(c, code, msg, model)
@@ -18,9 +21,6 @@ func UtilResponseReturnJsonWithMsg(c *gin.Context, code int, msg string, model i
 
 	var rj interface{}
 
-	if code == 0 {
-		code = 1001
-	}
 	//添加结果
 	if code == 1001 {
 		c.Set("result", true)
