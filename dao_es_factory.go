@@ -1,33 +1,47 @@
 package tgo
 
-import(
-"github.com/jolestar/go-commons-pool"
-"gopkg.in/olivere/elastic.v3"
-"net/http"
-"time"
+import (
+	"net/http"
+	"sync"
+	"time"
+
+	"github.com/jolestar/go-commons-pool"
+	"gopkg.in/olivere/elastic.v3"
 )
 
+var (
+	esTransport    *http.Transport
+	esTransportMux sync.Mutex
+)
 
-type DaoESFactory struct{
-
+type DaoESFactory struct {
 }
 
 func (f *DaoESFactory) MakeObject() (*pool.PooledObject, error) {
-  client,err:= f.MakeClient()
+	client, err := f.MakeClient()
 	return pool.NewPooledObject(client), err
 }
 
-func (f *DaoESFactory) MakeClient()(*elastic.Client,error){
-  config:= configESGet()
+func (f *DaoESFactory) MakeClient() (*elastic.Client, error) {
+	config := configESGet()
 
+	if esTransport == nil {
+		esTransportMux.Lock()
+
+		defer esTransportMux.Unlock()
+
+		if esTransport == nil {
+			esTransport = &http.Transport{
+				MaxIdleConnsPerHost: config.TransportMaxIdel,
+			}
+		}
+	}
 	clientHttp := &http.Client{
-		Transport: &http.Transport{
-            MaxIdleConnsPerHost: config.TransportMaxIdel,
-    	},
+		Transport: esTransport,
 		Timeout:   time.Duration(config.Timeout) * time.Millisecond,
 	}
 
-	client, err := elastic.NewClient(elastic.SetHttpClient(clientHttp), elastic.SetSniff(false), elastic.SetURL(config.Address...))
+	client, err := elastic.NewClient(elastic.SetHttpClient(clientHttp), elastic.SetURL(config.Address...))
 
 	if err != nil {
 		// Handle error
@@ -47,6 +61,17 @@ func (f *DaoESFactory) DestroyObject(object *pool.PooledObject) error {
 
 func (f *DaoESFactory) ValidateObject(object *pool.PooledObject) bool {
 	//do validate
+	esClient, ok := object.Object.(*elastic.Client)
+
+	if !ok {
+		UtilLogInfo("es pool validate object failed,convert to client failed")
+		return false
+	}
+	if !esClient.IsRunning() {
+		UtilLogInfo("es pool validate object failed,convert to client failed")
+		return false
+	}
+
 	return true
 }
 

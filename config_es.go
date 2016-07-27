@@ -11,13 +11,15 @@ var (
 )
 
 type ConfigES struct {
-	Address []string
-	ClientMaxTotal int
-	ClientMaxIdle int
-	ClientMinIdle int
-	ClientLifo bool
-	Timeout int
-	TransportMaxIdel int
+	Address             []string
+	ClientPool          bool
+	ClientMaxTotal      int
+	ClientMaxIdle       int
+	ClientMinIdle       int
+	ClientLifo          bool
+	ClientMaxWaitMillis int64
+	Timeout             int
+	TransportMaxIdel    int
 }
 
 func configESInit() {
@@ -48,21 +50,22 @@ func configESClear() {
 
 func configESGetDefault() *ConfigES {
 
-	return &ConfigES{Address:[]string{"http://172.172.177.16:9200"},
-									 ClientMaxTotal:20,
-								 	 ClientMinIdle:2,
-								 	 ClientMaxIdle:20,
-								 	 Timeout:3000,
-								 	 TransportMaxIdel:10}
+	return &ConfigES{Address: []string{"http://172.172.177.16:9200"},
+		ClientPool:       true,
+		ClientMaxTotal:   20,
+		ClientMinIdle:    2,
+		ClientMaxIdle:    20,
+		Timeout:          3000,
+		TransportMaxIdel: 10}
 }
 
-func configESGetAddress() []string{
-  configESInit()
+func configESGetAddress() []string {
+	configESInit()
 
-  return esConfig.Address
+	return esConfig.Address
 }
 
-func configESGet() *ConfigES{
+func configESGet() *ConfigES {
 	configESInit()
 
 	return esConfig
