@@ -518,6 +518,21 @@ func (b *DaoRedis) Del(key string) bool {
 	return true
 }
 
+func (b *DaoRedis) MDel(key ...string) bool {
+	var keys []interface{}
+	for _, v := range key {
+		keys = append(keys, b.getKey(v))
+	}
+
+	err := b.doDel("DEL", keys...)
+
+	if err != nil {
+		return false
+	}
+
+	return true
+}
+
 //hash start
 func (b *DaoRedis) HIncrby(key string, field string, value int) (int, bool) {
 
