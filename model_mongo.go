@@ -5,9 +5,9 @@ import (
 )
 
 type ModelMongo struct {
-	Id         int64     `bson:"_id,omitempty"`
-	Created_at time.Time `bson:"created_at,omitempty"`
-	Updated_at time.Time `bson:"updated_at,omitempty"`
+	Id         int64     `bson:"_id,omitempty" json:"id"`
+	Created_at time.Time `bson:"created_at,omitempty" json:"created_at"`
+	Updated_at time.Time `bson:"updated_at,omitempty" json:"updated_at"`
 }
 
 func (m *ModelMongo) GetCreatedTime() time.Time {
