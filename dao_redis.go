@@ -116,6 +116,7 @@ func (b *DaoRedis) InitRedisPool() (pools.Resource, error) {
 				var conn redis.Conn
 				conn, err = b.dail()
 				if err != nil {
+					redisPool.Put(r)
 					UtilLogErrorf("redis redail connection err:%s", err.Error())
 					return nil, err
 				} else {
