@@ -51,7 +51,7 @@ func (b *DaoRedis) dail() (redis.Conn, error) {
 
 	cacheConfig := ConfigCacheGetRedis()
 	address := fmt.Sprintf("%s:%d", cacheConfig.Address, cacheConfig.Port)
-	c, err := redis.DialTimeout("tcp", address, 0, time.Duration(cacheConfig.ReadTimeout)*time.Millisecond, time.Duration(cacheConfig.WriteTimeout)*time.Millisecond)
+	c, err := redis.DialTimeout("tcp", address, time.Duration(cacheConfig.ConnectTimeout)*time.Millisecond, time.Duration(cacheConfig.ReadTimeout)*time.Millisecond, time.Duration(cacheConfig.WriteTimeout)*time.Millisecond)
 	if err != nil {
 		UtilLogErrorf("open redis pool error: %s", err.Error())
 		return nil, err
