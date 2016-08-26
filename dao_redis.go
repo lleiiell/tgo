@@ -20,7 +20,7 @@ type DaoRedis struct {
 }
 
 var (
-	redisPool         *pools.ResourcePool
+	redisPool    *pools.ResourcePool
 	redisPoolMux sync.Mutex
 )
 
@@ -176,7 +176,7 @@ func (b *DaoRedis) doSet(cmd string, key string, value interface{}, fields ...st
 	}
 
 	if errDo != nil {
-		UtilLogErrorf("run redis command %s failed:%s", cmd, errDo.Error())
+		UtilLogErrorf("run redis command %s failed:error:%s,key:%s,fields:%v,data:%v", cmd, errDo.Error(), key, fields, value)
 		return nil, errDo
 	}
 	return reply, errDo
@@ -238,7 +238,7 @@ func (b *DaoRedis) doMSet(cmd string, key string, value map[string]interface{}) 
 	reply, errDo = redisClient.Do(cmd, args...)
 
 	if errDo != nil {
-		UtilLogErrorf("run redis command %s failed:%s", cmd, errDo.Error())
+		UtilLogErrorf("run redis command %s failed:error:%s,key:%s,value:%v", cmd, errDo.Error(), key, value)
 		return nil, errDo
 	}
 	return reply, errDo
@@ -275,7 +275,7 @@ func (b *DaoRedis) doGet(cmd string, key string, value interface{}, fields ...st
 
 	if errDo != nil {
 
-		UtilLogErrorf("run redis %s command failed:%s", cmd, errDo.Error())
+		UtilLogErrorf("run redis %s command failed: error:%s,key:%s,fields:%v", cmd, errDo.Error(), key, fields)
 
 		return false, errDo
 	}
@@ -321,7 +321,7 @@ func (b *DaoRedis) doMGet(cmd string, args []interface{}, value []interface{}) e
 	result, errDo := redis.ByteSlices(redisClient.Do(cmd, args...))
 
 	if errDo != nil {
-		UtilLogErrorf("run redis %s command failed:%s", cmd, errDo.Error())
+		UtilLogErrorf("run redis %s command failed: error:%s,args:%v", cmd, errDo.Error(), args)
 		return errDo
 	}
 
@@ -377,7 +377,7 @@ func (b *DaoRedis) doIncr(cmd string, key string, value int, fields ...string) (
 	}
 
 	if errDo != nil {
-		UtilLogErrorf("run redis %s command failed:%s", cmd, errDo.Error())
+		UtilLogErrorf("run redis %s command failed: error:%s,key:%s,fields:%v,value:%d", cmd, errDo.Error(), key, fields, value)
 
 		return 0, false
 	}
@@ -408,7 +408,7 @@ func (b *DaoRedis) doDel(cmd string, data ...interface{}) error {
 
 	if errDo != nil {
 
-		UtilLogErrorf("run redis %s command failed:%s", cmd, errDo.Error())
+		UtilLogErrorf("run redis %s command failed: error:%s,data:%v", cmd, errDo.Error(), data)
 	}
 
 	return errDo
@@ -458,6 +458,7 @@ func (b *DaoRedis) Expire(key string, time int) bool {
 	redisClient := redisResource.(ResourceConn)
 	_, err = redisClient.Do("EXPIRE", key, time)
 	if err != nil {
+		UtilLogErrorf("run redis EXPIRE command failed: error:%s,key:%s,time:%d", err.Error(), key, time)
 		return false
 	}
 
@@ -608,7 +609,7 @@ func (b *DaoRedis) HLen(key string, data *int) bool {
 	resultData, errDo := redisClient.Do("HLEN", key)
 
 	if errDo != nil {
-		UtilLogErrorf("run redis HLEN command failed:%s", errDo.Error())
+		UtilLogErrorf("run redis HLEN command failed: error:%s,key:%s", errDo.Error(), key)
 		return false
 	}
 
@@ -637,6 +638,7 @@ func (b *DaoRedis) HDel(key string, data ...interface{}) bool {
 	err := b.doDel("HDEL", args...)
 
 	if err != nil {
+		UtilLogErrorf("run redis HDEL command failed: error:%s,key:%s,data:%v", err.Error(), key, data)
 		return false
 	}
 
@@ -659,7 +661,7 @@ func (b *DaoRedis) ZAdd(key string, score int, data interface{}) bool {
 	_, errDo := redisClient.Do("ZADD", key, score, data)
 
 	if errDo != nil {
-		UtilLogErrorf("run redis ZADD command failed:%s", errDo.Error())
+		UtilLogErrorf("run redis ZADD command failed: error:%s,key:%s,score:%d,data:%v", errDo.Error(), key, score, data)
 		return false
 	}
 	return true
@@ -744,7 +746,7 @@ func (b *DaoRedis) LREM(key string, count int, data interface{}) int {
 	result, errDo := redisClient.Do("LREM", key, count, data)
 
 	if errDo != nil {
-		UtilLogErrorf("run redis command LREM failed:%s", errDo.Error())
+		UtilLogErrorf("run redis command LREM failed: error:%s,key:%s,count:%d,data:%v", errDo.Error(), key, count, data)
 		return 0
 	}
 
