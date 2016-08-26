@@ -3,7 +3,8 @@ package tgo
 import (
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/jinzhu/gorm"
+	"sync"
+	"time"
 )
 
 type DaoMysql struct {
@@ -11,7 +12,6 @@ type DaoMysql struct {
 }
 
 func NewDaoMysql() *DaoMysql {
-
 	return &DaoMysql{}
 }
 
@@ -26,71 +26,80 @@ type Sort struct {
 	Asc   bool
 }
 
-func initMysql(isRead bool) (*gorm.DB, error) {
+var (
+	MysqlPool *MysqlConnectionPool
+	mysqlReadPool *MysqlConnectionPool
+	mysqlReadPoolMux sync.Mutex
+	mysqlWritePool *MysqlConnectionPool
+	mysqlWritePoolMux sync.Mutex
+	poolTicker *time.Ticker
+)
 
+func initMysqlPool(isRead bool) (MysqlConnection, error) {
 	config := NewConfigDb()
-
-	var dbConfig *ConfigDbBase
+	configPool := config.Mysql.GetPool()
 	if isRead {
-		dbConfig = config.Mysql.GetRead()
+		if mysqlReadPool == nil || mysqlReadPool.IsClosed() {
+			mysqlReadPoolMux.Lock()
+			defer mysqlReadPoolMux.Unlock()
+			mysqlReadPool = NewMysqlConnectionPool(CreateMysqlConnectionRead, configPool.PoolCap,
+				configPool.PoolMaxCap, configPool.PoolIdleTimeout*time.Millisecond)
+		}
+		MysqlPool = mysqlReadPool
 	} else {
-		dbConfig = config.Mysql.GetWrite()
+		if mysqlWritePool == nil || mysqlWritePool.IsClosed() {
+			mysqlWritePoolMux.Lock()
+			defer mysqlWritePoolMux.Unlock()
+			mysqlWritePool = NewMysqlConnectionPool(CreateMysqlConnectionWrite, configPool.PoolCap,
+				configPool.PoolMaxCap, configPool.PoolIdleTimeout*time.Millisecond)
+		}
+		MysqlPool = mysqlWritePool
 	}
-	//user:password@tcp(172.172.177.15:3306)dbname?charset=utf8
-	connectionString := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4,utf8&parseTime=True&loc=Local", dbConfig.User, dbConfig.Password, dbConfig.Address, dbConfig.Port, dbConfig.DbName)
-	//connectionString := dbConfig.User + ":" + dbConfig.Password + "@tcp(" + dbConfig.Address + ":" + dbConfig.Port + ")" + dbConfig.DbName + "?charset=utf8"
-
-	db, err := gorm.Open("mysql", connectionString)
-
-	if err != nil {
-		//记录
-		//errors.New("connect mysql error:" + err.Error())
-		UtilLogError(fmt.Sprintf("connect mysql error:%s", err.Error()))
+	if poolTicker == nil {
+		poolTicker = time.NewTicker(time.Second * 60)
 	}
-	db.SingularTable(true)
-
-	if ConfigEnvIsDev() {
-		db.LogMode(true)
+	//todo 动态控制池子大小 - 优化
+	if len(poolTicker.C) > 0 {
+		<-poolTicker.C
+		if MysqlPool.WaitCount() >= configPool.PoolWaitCount || MysqlPool.WaitTime() >= configPool.PoolWaitTimeout {
+			caps := MysqlPool.Capacity() + configPool.PoolWaitCount
+			if caps > int64(configPool.PoolMaxCap) {
+				caps = int64(configPool.PoolMaxCap)
+			}
+			MysqlPool.SetCapacity(int(caps))
+		} else {
+			caps := MysqlPool.Capacity() - configPool.PoolWaitCount
+			if caps < int64(configPool.PoolCap) {
+				caps = int64(configPool.PoolCap)
+			}
+			MysqlPool.SetCapacity(int(caps))
+		}
 	}
 
-	return db, err
+	return MysqlPool.Get(isRead)
 }
 
-func (d *DaoMysql) GetReadOrm() (*gorm.DB, error) {
+func (d *DaoMysql) GetReadOrm() (MysqlConnection, error) {
 	return d.getOrm(true)
 }
 
-func (d *DaoMysql) GetWriteOrm() (*gorm.DB, error) {
+func (d *DaoMysql) GetWriteOrm() (MysqlConnection, error) {
 	return d.getOrm(false)
 }
 
-func (d *DaoMysql) getOrm(isRead bool) (*gorm.DB, error) {
-	db, err := initMysql(isRead)
-
-	if err != nil {
-		return db, err
-	}
-	if d.TableName != "" {
-		return db.Table(d.TableName), nil
-	}
-	return db, err
+func (d *DaoMysql) getOrm(isRead bool) (MysqlConnection, error) {
+	return initMysqlPool(isRead)
 }
 
 func (d *DaoMysql) Insert(model interface{}) error {
 	orm, err := d.GetWriteOrm()
-
 	if err != nil {
 		return err
 	}
-
-	defer orm.Close()
-	//mapData := structs.Map(model)
-
+	defer orm.Put()
 	errInsert := orm.Create(model).Error
-
 	if errInsert != nil {
 		//记录
-		//errors.New("connect mysql error:" + err.Error())
 		UtilLogError(fmt.Sprintf("insert data error:%s", errInsert.Error()))
 	}
 
@@ -98,23 +107,17 @@ func (d *DaoMysql) Insert(model interface{}) error {
 }
 
 func (d *DaoMysql) Select(condition string, data interface{}, field ...[]string) error {
-
 	orm, err := d.GetReadOrm()
-
 	if err != nil {
 		return err
 	}
-
-	defer orm.Close()
-
+	defer orm.Put()
 	var errFind error
-
 	if len(field) == 0 {
 		errFind = orm.Where(condition).Find(data).Error
 	} else {
 		errFind = orm.Where(condition).Select(field[0]).Find(data).Error
 	}
-
 	if errFind != nil {
 		UtilLogError(fmt.Sprintf("mysql select table %s error:%s", d.TableName, errFind.Error()))
 		return errFind
