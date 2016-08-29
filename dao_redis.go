@@ -26,12 +26,13 @@ var (
 
 type ResourceConn struct {
 	redis.Conn
+	serverIndex int
 }
 
 func (r ResourceConn) Close() {
 	r.Conn.Close()
 }
-
+/*
 func (b *DaoRedis) InitRedis() (redis.Conn, error) {
 
 	cacheConfig := ConfigCacheGetRedis()
@@ -46,19 +47,33 @@ func (b *DaoRedis) InitRedis() (redis.Conn, error) {
 
 	return conn, err
 }
-
-func (b *DaoRedis) dail() (redis.Conn, error) {
+*/
+func (b *DaoRedis) dail(fromIndex int) (redis.Conn,int, error) {
 
 	cacheConfig := ConfigCacheGetRedis()
-	address := fmt.Sprintf("%s:%d", cacheConfig.Address, cacheConfig.Port)
-	c, err := redis.DialTimeout("tcp", address, time.Duration(cacheConfig.ConnectTimeout)*time.Millisecond, time.Duration(cacheConfig.ReadTimeout)*time.Millisecond, time.Duration(cacheConfig.WriteTimeout)*time.Millisecond)
-	if err != nil {
-		UtilLogErrorf("open redis pool error: %s", err.Error())
-		return nil, err
+
+
+	if len(cacheConfig.Address)>0{
+		if fromIndex+1 > len(cacheConfig.Address){
+			fromIndex =0
+		}
+
+		var c redis.Conn
+		var err error
+		for i,addr:= range cacheConfig.Address{
+			if i >= fromIndex{
+				c, err = redis.DialTimeout("tcp", addr, time.Duration(cacheConfig.ConnectTimeout)*time.Millisecond, time.Duration(cacheConfig.ReadTimeout)*time.Millisecond, time.Duration(cacheConfig.WriteTimeout)*time.Millisecond)
+				if err != nil {
+					UtilLogErrorf("dail redis pool error: %s", err.Error())
+				}else{
+					return c,i,err
+				}
+			}
+		}
+		return c,0,err
+	}else{
+		return nil,0,errors.New("redis address lenth is 0")
 	}
-
-	return c, err
-
 }
 func (b *DaoRedis) InitRedisPool() (pools.Resource, error) {
 
@@ -77,26 +92,14 @@ func (b *DaoRedis) InitRedisPool() (pools.Resource, error) {
 			}
 
 			redisPool = pools.NewResourcePool(func() (pools.Resource, error) {
-				c, err := b.dail()
-				return ResourceConn{c}, err
+				c,serverIndex, err := b.dail(0)
+				return ResourceConn{Conn:c,serverIndex:serverIndex}, err
 			}, cacheConfig.PoolMinActive, cacheConfig.PoolMaxActive, time.Duration(cacheConfig.PoolIdleTimeout)*time.Millisecond)
 		}
 	}
 	if redisPool != nil {
 		var r pools.Resource
 		var err error
-		/*
-			if pool.Available() == 0 {
-				var conn redis.Conn
-				conn, err = b.dail()
-
-
-				if err != nil {
-					UtilLogErrorf("redis ava dail connection err:%s", err.Error())
-				}
-				return ResourceConn{conn}, err
-			}*/
-
 		ctx := context.TODO()
 
 		r, err = redisPool.Get(ctx)
@@ -114,13 +117,14 @@ func (b *DaoRedis) InitRedisPool() (pools.Resource, error) {
 				rc.Close()
 				//连接断开，重新打开
 				var conn redis.Conn
-				conn, err = b.dail()
+				var serverIndex int
+				conn, serverIndex,err = b.dail(rc.serverIndex+1)
 				if err != nil {
 					redisPool.Put(r)
 					UtilLogErrorf("redis redail connection err:%s", err.Error())
 					return nil, err
 				} else {
-					return ResourceConn{conn}, err
+					return ResourceConn{Conn:conn,serverIndex:serverIndex}, err
 				}
 			}
 		}

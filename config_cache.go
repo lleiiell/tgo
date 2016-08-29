@@ -15,8 +15,7 @@ type ConfigCache struct {
 }
 
 type ConfigCacheRedis struct {
-	Address         string
-	Port            int
+	Address         []string
 	Prefix          string
 	ReadTimeout     int
 	WriteTimeout    int
@@ -29,13 +28,13 @@ type ConfigCacheRedis struct {
 
 func configCacheGet() {
 
-	if cacheConfig == nil || cacheConfig.Redis.Address == "" {
+	if cacheConfig == nil || len(cacheConfig.Redis.Address) == 0 {
 
 		cacheConfigMux.Lock()
 
 		defer cacheConfigMux.Unlock()
 
-		if cacheConfig == nil || cacheConfig.Redis.Address == "" {
+		if cacheConfig == nil || len(cacheConfig.Redis.Address) == 0 {
 			cacheConfig = &ConfigCache{}
 
 			defaultCacheConfig := configCacheGetDefault()
@@ -54,7 +53,7 @@ func configCacheClear() {
 }
 
 func configCacheGetDefault() *ConfigCache {
-	return &ConfigCache{Redis: ConfigCacheRedis{"172.172.177.15", 33062, "component", 1000, 1000, 1000, 10, 100, 180000, 2}}
+	return &ConfigCache{Redis: ConfigCacheRedis{[]string{"172.172.177.15:33062"},"component", 1000, 1000, 1000, 10, 100, 180000, 2}}
 }
 
 func ConfigCacheGetRedis() *ConfigCacheRedis {
