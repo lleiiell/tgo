@@ -112,7 +112,7 @@ func (b *DaoRedis) InitRedisPool() (pools.Resource, error) {
 			rc := r.(ResourceConn)
 
 			if rc.Conn.Err() != nil {
-				UtilLogErrorf("redis rc connection err:%s", rc.Conn.Err().Error())
+				UtilLogErrorf("redis rc connection err:%s,serverIndex:%d", rc.Conn.Err().Error(),rc.serverIndex)
 
 				rc.Close()
 				//连接断开，重新打开
