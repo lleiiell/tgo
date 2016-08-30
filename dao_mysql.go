@@ -114,9 +114,9 @@ func (d *DaoMysql) Select(condition string, data interface{}, field ...[]string)
 	defer orm.Put()
 	var errFind error
 	if len(field) == 0 {
-		errFind = orm.Where(condition).Find(data).Error
+		errFind = orm.Table(d.TableName).Where(condition).Find(data).Error
 	} else {
-		errFind = orm.Where(condition).Select(field[0]).Find(data).Error
+		errFind = orm.Table(d.TableName).Where(condition).Select(field[0]).Find(data).Error
 	}
 	if errFind != nil {
 		UtilLogError(fmt.Sprintf("mysql select table %s error:%s", d.TableName, errFind.Error()))
