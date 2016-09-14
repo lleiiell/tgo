@@ -1,6 +1,7 @@
 package tgo
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -47,4 +48,10 @@ func UtilTimeFewDurationLater(duration time.Duration) time.Time {
 func UtilTimeIsExpired(expirationTime time.Time) bool {
 	after := time.Now().After(expirationTime)
 	return after
+}
+
+//UtilTimeConsumePrint print time consume
+func UtilTimeConsumePrint(timeBefore time.Time, prefix string) {
+	duration := time.Now().Sub(timeBefore)
+	fmt.Printf("%s time :%d\n", prefix, duration.Nanoseconds()/1000000)
 }
