@@ -18,6 +18,7 @@
 		"DbName":"component",
 		"Servers":"172.172.177.20:34004",
 		"Read_option":"PRIMARY",
-		"Timeout": 10000
+		"Timeout": 10000,
+		"PoolLimit":30
 	}
 }

@@ -39,6 +39,7 @@ type ConfigMongo struct {
 	Servers     string
 	Read_option string
 	Timeout     int
+	PoolLimit   int
 }
 
 func configDbInit() {
@@ -69,7 +70,7 @@ func configDbGetDefault() *ConfigDb {
 	return &ConfigDb{Mysql: ConfigMysql{Write: ConfigDbBase{"172.172.177.15", 33062, "root", "root@dev", ""},
 		Reads: []ConfigDbBase{ConfigDbBase{"172.172.177.15", 33062, "root", "root@dev", ""},
 			ConfigDbBase{"172.172.177.15", 33062, "root", "root@dev", ""}}},
-		Mongo: ConfigMongo{DbName: "Component", Servers: "172.172.177.20:36004", Read_option: "PRIMARY", Timeout: 1000}}
+		Mongo: ConfigMongo{DbName: "Component", Servers: "172.172.177.20:36004", Read_option: "PRIMARY", Timeout: 1000,PoolLimit:30}}
 }
 
 func NewConfigMysql() *ConfigMysql {

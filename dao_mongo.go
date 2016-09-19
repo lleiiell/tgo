@@ -66,7 +66,7 @@ func (m *DaoMongo) GetSession() (*mgo.Session, string, error) {
 				err = m.processError(err, "connect to mongo server error:%s,%s", err.Error(), connectionString)
 				return nil, "", err
 			}
-			sessionMongo.SetPoolLimit(1000)
+			sessionMongo.SetPoolLimit(configMongo.PoolLimit)
 		}
 	}
 
