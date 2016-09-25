@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -49,12 +51,16 @@ func ConfigAppGetString(key string, defaultConfig string) string {
 
 	config := ConfigAppGet(key)
 
-	configStr := config.(string)
+	if config == nil {
+		return defaultConfig
+	} else {
+		configStr := config.(string)
 
-	if UtilIsEmpty(configStr) {
-		configStr = defaultConfig
+		if UtilIsEmpty(configStr) {
+			configStr = defaultConfig
+		}
+		return configStr
 	}
-	return configStr
 }
 
 func ConfigAppGet(key string) interface{} {
@@ -132,4 +138,68 @@ func ConfigEnvIsBeta() bool {
 		return true
 	}
 	return false
+}
+
+//ConfigAppGetSlice 获取slice配置，data必须是指针slice *[]，目前支持string,int,int64,bool,float64,float32
+func ConfigAppGetSlice(key string, data interface{}) error {
+
+	dataStrConfig := ConfigAppGetString(key, "")
+
+	if UtilIsEmpty(dataStrConfig) {
+		return errors.New("config is empty")
+	}
+
+	dataStrSlice := strings.Split(dataStrConfig, ",")
+
+	dataType := reflect.ValueOf(data)
+
+	//不是指针Slice
+	if dataType.Kind() != reflect.Ptr || dataType.Elem().Kind() != reflect.Slice {
+		return errors.New("reflect is not pt or slice")
+	}
+
+	dataSlice := dataType.Elem()
+
+	//dataSlice = dataSlice.Slice(0, dataSlice.Cap())
+
+	dataElem := dataSlice.Type().Elem()
+
+	for _, dataStr := range dataStrSlice {
+
+		if UtilIsEmpty(dataStr) {
+			continue
+		}
+		var errConv error
+		var item interface{}
+
+		switch dataElem.Kind() {
+		case reflect.String:
+			item = dataStr
+		case reflect.Int:
+			item, errConv = strconv.Atoi(dataStr)
+		case reflect.Int64:
+			item, errConv = strconv.ParseInt(dataStr, 10, 64)
+		case reflect.Bool:
+			item, errConv = strconv.ParseBool(dataStr)
+		case reflect.Float64:
+			item, errConv = strconv.ParseFloat(dataStr, 64)
+		case reflect.Float32:
+			var item64, errConv = strconv.ParseFloat(dataStr, 32)
+			if errConv == nil {
+				item = float32(item64)
+			}
+		/*
+			case reflect.Struct:
+				var de
+				errConv = json.Unmarshal([]byte(dataStr), de.Interface())*/
+		default:
+			return errors.New("type not support")
+		}
+		if errConv != nil {
+			return errors.New(fmt.Sprintf("convert config failed error:%s", errConv.Error()))
+		}
+
+		dataSlice.Set(reflect.Append(dataSlice, reflect.ValueOf(item)))
+	}
+	return nil
 }
