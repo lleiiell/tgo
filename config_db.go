@@ -29,7 +29,8 @@ type ConfigDbBase struct {
 }
 
 type ConfigDbPool struct {
-	PoolCap   int
+	PoolMinCap   int
+	PoolExCap   int
 	PoolMaxCap   int
 	PoolIdleTimeout time.Duration
 	PoolWaitCount int64
@@ -78,7 +79,7 @@ func configDbClear() {
 func configDbGetDefault() *ConfigDb {
 	return &ConfigDb{Mysql: ConfigMysql{
 		DbName:"",
-		Pool : ConfigDbPool{100, 200, 3600, 20, 60},
+		Pool : ConfigDbPool{5, 5, 20, 3600, 100, 60},
 		Write: ConfigDbBase{"172.172.177.15", 33062, "root", "root@dev", ""},
 		Reads: []ConfigDbBase{ConfigDbBase{"172.172.177.15", 33062, "root", "root@dev", ""},
 			ConfigDbBase{"172.172.177.15", 33062, "root", "root@dev", ""}}},

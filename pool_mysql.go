@@ -19,6 +19,7 @@ type MysqlConnectionPool struct {
 
 type MysqlConnection struct {
     *gorm.DB
+    IsRead bool
 }
 
 func (c MysqlConnection) Close() {
@@ -26,7 +27,11 @@ func (c MysqlConnection) Close() {
 }
 
 func (c MysqlConnection) Put() {
-    MysqlPool.Put(c)
+    if c.IsRead {
+        MysqlReadPool.Put(c)
+    } else {
+        MysqlWritePool.Put(c)
+    }
 }
 
 func NewMysqlConnectionPool(factory pools.Factory, capacity, maxCap int, idleTimeout time.Duration) (*MysqlConnectionPool) {
@@ -37,12 +42,12 @@ func NewMysqlConnectionPool(factory pools.Factory, capacity, maxCap int, idleTim
 
 func CreateMysqlConnectionRead() (pools.Resource, error) {
     resultDb, err := initDb(MYSQL_CONNECTION_TYPE_READ)
-    return MysqlConnection{resultDb}, err
+    return MysqlConnection{resultDb, true}, err
 }
 
 func CreateMysqlConnectionWrite() (pools.Resource, error) {
     resultDb, err := initDb(MYSQL_CONNECTION_TYPE_WRITE)
-    return MysqlConnection{resultDb}, err
+    return MysqlConnection{resultDb, false}, err
 }
 
 func initDb(connectionType int) (*gorm.DB, error) {
@@ -62,7 +67,7 @@ func initDb(connectionType int) (*gorm.DB, error) {
 
     resultDb.SingularTable(true)
 
-    if ConfigEnvGet() != "idc" {
+    if ConfigEnvIsDev() {
         resultDb.LogMode(true)
     }
 
@@ -75,17 +80,16 @@ func (p *MysqlConnectionPool) Get(isRead bool) (MysqlConnection, error) {
     if err != nil {
         UtilLogErrorf("connect mysql pool get error: %s", err.Error())
     }
-    c := r.(MysqlConnection)
+    c, ok := r.(MysqlConnection)
     //判断conn是否正常
-    if c.Error != nil {
-        c.Close()
+    if !ok || c.DB == nil {
         var db *gorm.DB
         if isRead {
             db, err = initDb(MYSQL_CONNECTION_TYPE_READ)
         } else {
             db, err = initDb(MYSQL_CONNECTION_TYPE_WRITE)
         }
-        c = MysqlConnection{db}
+        c = MysqlConnection{db, isRead}
         if err != nil {
             UtilLogErrorf("redo connect mysql error: %s", err.Error())
             p.Put(c)//放入失败的资源，保证下次重连

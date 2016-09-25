@@ -27,56 +27,80 @@ type Sort struct {
 }
 
 var (
-	MysqlPool *MysqlConnectionPool
-	mysqlReadPool *MysqlConnectionPool
+	MysqlReadPool *MysqlConnectionPool
 	mysqlReadPoolMux sync.Mutex
-	mysqlWritePool *MysqlConnectionPool
+	MysqlWritePool *MysqlConnectionPool
 	mysqlWritePoolMux sync.Mutex
-	poolTicker *time.Ticker
 )
 
-func initMysqlPool(isRead bool) (MysqlConnection, error) {
+func init() {
+	config := NewConfigDb()
+	configPool := config.Mysql.GetPool()
+	poolTicker := time.NewTicker(time.Second * 60)
+
+	//todo 优化动态控制池子大小
+
+	go monitorPool(configPool, poolTicker, true, MysqlReadPool)
+	go monitorPool(configPool, poolTicker, false, MysqlWritePool)
+}
+
+func monitorPool(configPool *ConfigDbPool, poolTicker *time.Ticker, isRead bool, mysqlPool *MysqlConnectionPool) {
+	var (
+		caps int
+		poolCaps int
+		oldWaitCount int64
+		waitCount int64
+	)
+	for {
+		if mysqlPool == nil || mysqlPool.IsClosed() {
+			mysqlPool = initMysqlPool(isRead)
+		}
+		waitCount = mysqlPool.WaitCount() - oldWaitCount
+		oldWaitCount = mysqlPool.WaitCount()
+		poolCaps = int(mysqlPool.Capacity())
+		if waitCount >= configPool.PoolWaitCount && poolCaps != configPool.PoolMaxCap {//定时循环内超出多少等待数目
+			caps = poolCaps + configPool.PoolExCap
+		} else if waitCount == 0 && poolCaps != configPool.PoolMinCap {//闲时减少池子容量
+			caps = poolCaps - configPool.PoolExCap
+		} else {
+			<-poolTicker.C
+			continue
+		}
+		if caps < configPool.PoolMinCap {
+			caps = configPool.PoolMinCap
+		}
+		if caps > configPool.PoolMaxCap {
+			caps = configPool.PoolMaxCap
+		}
+		mysqlPool.SetCapacity(caps)
+		<-poolTicker.C
+	}
+}
+
+func initMysqlPool(isRead bool) (*MysqlConnectionPool) {
 	config := NewConfigDb()
 	configPool := config.Mysql.GetPool()
 	if isRead {
-		if mysqlReadPool == nil || mysqlReadPool.IsClosed() {
+		if MysqlReadPool == nil || MysqlReadPool.IsClosed() {
 			mysqlReadPoolMux.Lock()
 			defer mysqlReadPoolMux.Unlock()
-			mysqlReadPool = NewMysqlConnectionPool(CreateMysqlConnectionRead, configPool.PoolCap,
+			MysqlReadPool = NewMysqlConnectionPool(CreateMysqlConnectionRead, configPool.PoolMinCap,
 				configPool.PoolMaxCap, configPool.PoolIdleTimeout*time.Millisecond)
 		}
-		MysqlPool = mysqlReadPool
+		return MysqlReadPool
 	} else {
-		if mysqlWritePool == nil || mysqlWritePool.IsClosed() {
+		if MysqlWritePool == nil || MysqlWritePool.IsClosed() {
 			mysqlWritePoolMux.Lock()
 			defer mysqlWritePoolMux.Unlock()
-			mysqlWritePool = NewMysqlConnectionPool(CreateMysqlConnectionWrite, configPool.PoolCap,
+			MysqlWritePool = NewMysqlConnectionPool(CreateMysqlConnectionWrite, configPool.PoolMinCap,
 				configPool.PoolMaxCap, configPool.PoolIdleTimeout*time.Millisecond)
 		}
-		MysqlPool = mysqlWritePool
+		return MysqlWritePool
 	}
-	if poolTicker == nil {
-		poolTicker = time.NewTicker(time.Second * 60)
-	}
-	//todo 动态控制池子大小 - 优化
-	if len(poolTicker.C) > 0 {
-		<-poolTicker.C
-		if MysqlPool.WaitCount() >= configPool.PoolWaitCount || MysqlPool.WaitTime() >= configPool.PoolWaitTimeout {
-			caps := MysqlPool.Capacity() + configPool.PoolWaitCount
-			if caps > int64(configPool.PoolMaxCap) {
-				caps = int64(configPool.PoolMaxCap)
-			}
-			MysqlPool.SetCapacity(int(caps))
-		} else {
-			caps := MysqlPool.Capacity() - configPool.PoolWaitCount
-			if caps < int64(configPool.PoolCap) {
-				caps = int64(configPool.PoolCap)
-			}
-			MysqlPool.SetCapacity(int(caps))
-		}
-	}
+}
 
-	return MysqlPool.Get(isRead)
+func initMysqlPoolConnection(isRead bool) (MysqlConnection, error) {
+	return initMysqlPool(isRead).Get(isRead)
 }
 
 func (d *DaoMysql) GetReadOrm() (MysqlConnection, error) {
@@ -88,7 +112,7 @@ func (d *DaoMysql) GetWriteOrm() (MysqlConnection, error) {
 }
 
 func (d *DaoMysql) getOrm(isRead bool) (MysqlConnection, error) {
-	return initMysqlPool(isRead)
+	return initMysqlPoolConnection(isRead)
 }
 
 func (d *DaoMysql) Insert(model interface{}) error {
@@ -97,7 +121,7 @@ func (d *DaoMysql) Insert(model interface{}) error {
 		return err
 	}
 	defer orm.Put()
-	errInsert := orm.Create(model).Error
+	errInsert := orm.Table(d.TableName).Create(model).Error
 	if errInsert != nil {
 		//记录
 		UtilLogError(fmt.Sprintf("insert data error:%s", errInsert.Error()))
@@ -118,10 +142,6 @@ func (d *DaoMysql) Select(condition string, data interface{}, field ...[]string)
 	} else {
 		errFind = orm.Table(d.TableName).Where(condition).Select(field[0]).Find(data).Error
 	}
-	if errFind != nil {
-		UtilLogError(fmt.Sprintf("mysql select table %s error:%s", d.TableName, errFind.Error()))
-		return errFind
-	}
 
-	return nil
+	return errFind
 }
