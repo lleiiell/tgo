@@ -2,9 +2,10 @@ package tgo
 
 import (
 	"fmt"
-	_ "github.com/go-sql-driver/mysql"
 	"sync"
 	"time"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 type DaoMysql struct {
@@ -27,9 +28,9 @@ type Sort struct {
 }
 
 var (
-	MysqlReadPool *MysqlConnectionPool
-	mysqlReadPoolMux sync.Mutex
-	MysqlWritePool *MysqlConnectionPool
+	MysqlReadPool     *MysqlConnectionPool
+	mysqlReadPoolMux  sync.Mutex
+	MysqlWritePool    *MysqlConnectionPool
 	mysqlWritePoolMux sync.Mutex
 )
 
@@ -46,10 +47,10 @@ func init() {
 
 func monitorPool(configPool *ConfigDbPool, poolTicker *time.Ticker, isRead bool, mysqlPool *MysqlConnectionPool) {
 	var (
-		caps int
-		poolCaps int
+		caps         int
+		poolCaps     int
 		oldWaitCount int64
-		waitCount int64
+		waitCount    int64
 	)
 	for {
 		if mysqlPool == nil || mysqlPool.IsClosed() {
@@ -58,9 +59,9 @@ func monitorPool(configPool *ConfigDbPool, poolTicker *time.Ticker, isRead bool,
 		waitCount = mysqlPool.WaitCount() - oldWaitCount
 		oldWaitCount = mysqlPool.WaitCount()
 		poolCaps = int(mysqlPool.Capacity())
-		if waitCount >= configPool.PoolWaitCount && poolCaps != configPool.PoolMaxCap {//定时循环内超出多少等待数目
+		if waitCount >= configPool.PoolWaitCount && poolCaps != configPool.PoolMaxCap { //定时循环内超出多少等待数目
 			caps = poolCaps + configPool.PoolExCap
-		} else if waitCount == 0 && poolCaps != configPool.PoolMinCap {//闲时减少池子容量
+		} else if waitCount == 0 && poolCaps != configPool.PoolMinCap { //闲时减少池子容量
 			caps = poolCaps - configPool.PoolExCap
 		} else {
 			<-poolTicker.C
@@ -77,7 +78,7 @@ func monitorPool(configPool *ConfigDbPool, poolTicker *time.Ticker, isRead bool,
 	}
 }
 
-func initMysqlPool(isRead bool) (*MysqlConnectionPool) {
+func initMysqlPool(isRead bool) *MysqlConnectionPool {
 	config := NewConfigDb()
 	configPool := config.Mysql.GetPool()
 	if isRead {

@@ -2,11 +2,12 @@
 	"Mysql":{
 		"DbName":"component",
 		"Pool":{
-			"PoolCap":100,
-			"PoolMaxCap":200,
+			"PoolMinCap":10,
+			"PoolExCap":5,
+			"PoolMaxCap":40,
 			"PoolIdleTimeout":3600,
-			"PoolWaitCount":20,
-			"PoolWaitTimeout":60
+			"PoolWaitCount":1000,
+			"PoolWaitTimeout":30
 		},
 		"Write":{
 			"Address":"172.172.177.20",
@@ -25,7 +26,7 @@
 		"DbName":"component",
 		"Servers":"172.172.177.20:34004",
 		"Read_option":"PRIMARY",
-		"Timeout": 10000,
+		"Timeout": 1000,
 		"PoolLimit":30
 	}
 }
