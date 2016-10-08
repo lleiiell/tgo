@@ -28,8 +28,18 @@ type ConfigDbBase struct {
 	DbName   string `json:"-"`
 }
 
+type ConfigDbPool struct {
+	PoolMinCap   int
+	PoolExCap   int
+	PoolMaxCap   int
+	PoolIdleTimeout time.Duration
+	PoolWaitCount int64
+	PoolWaitTimeout time.Duration
+}
+
 type ConfigMysql struct {
 	DbName string
+	Pool ConfigDbPool
 	Write  ConfigDbBase
 	Reads  []ConfigDbBase
 }
@@ -41,6 +51,7 @@ type ConfigMongo struct {
 	Timeout     int
 	PoolLimit   int
 }
+
 
 func configDbInit() {
 
@@ -67,7 +78,10 @@ func configDbClear() {
 	dbConfig = nil
 }
 func configDbGetDefault() *ConfigDb {
-	return &ConfigDb{Mysql: ConfigMysql{Write: ConfigDbBase{"172.172.177.15", 33062, "root", "root@dev", ""},
+	return &ConfigDb{Mysql: ConfigMysql{
+		DbName:"",
+		Pool : ConfigDbPool{5, 5, 20, 3600, 100, 60},
+		Write: ConfigDbBase{"172.172.177.15", 33062, "root", "root@dev", ""},
 		Reads: []ConfigDbBase{ConfigDbBase{"172.172.177.15", 33062, "root", "root@dev", ""},
 			ConfigDbBase{"172.172.177.15", 33062, "root", "root@dev", ""}}},
 		Mongo: ConfigMongo{DbName: "Component", Servers: "172.172.177.20:36004", Read_option: "PRIMARY", Timeout: 1000,PoolLimit:30}}
@@ -75,6 +89,15 @@ func configDbGetDefault() *ConfigDb {
 
 func NewConfigMysql() *ConfigMysql {
 	return &ConfigMysql{}
+}
+
+func (m *ConfigMysql) GetPool() *ConfigDbPool {
+	configDbInit()
+	poolConfig := dbConfig.Mysql.Pool
+	if &poolConfig == nil {
+		poolConfig = configDbGetDefault().Mysql.Pool
+	}
+	return &poolConfig
 }
 
 func (m *ConfigMysql) GetWrite() *ConfigDbBase {

@@ -1,6 +1,13 @@
 {
 	"Mysql":{
 		"DbName":"component",
+		"Pool":{
+			"PoolCap":100,
+			"PoolMaxCap":200,
+			"PoolIdleTimeout":3600,
+			"PoolWaitCount":20,
+			"PoolWaitTimeout":60
+		},
 		"Write":{
 			"Address":"172.172.177.20",
 			"Port":33069,
