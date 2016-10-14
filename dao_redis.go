@@ -874,3 +874,75 @@ func (b *DaoRedis) Pop(value interface{}, isLeft bool) bool {
 }
 
 //list end
+
+//pipeline start
+
+func (b *DaoRedis) PipelineHGet(key []string, fields []interface{}, data []interface{}) error {
+	var args [][]interface{}
+
+	for k, v := range key {
+		var arg []interface{}
+		arg = append(arg, b.getKey(v))
+		arg = append(arg, fields[k])
+		args = append(args, arg)
+	}
+
+	err := b.pipeDoGet("HGET", args, data)
+
+	return err
+}
+
+func (b *DaoRedis) pipeDoGet(cmd string, args [][]interface{}, value []interface{}) error {
+
+	redisResource, err := b.InitRedisPool()
+
+	if err != nil {
+		return err
+	}
+	defer redisPool.Put(redisResource)
+
+	redisClient := redisResource.(ResourceConn)
+
+	for _, v := range args {
+		if err := redisClient.Send(cmd, v...); err != nil {
+			UtilLogErrorf("Send(%v) returned error %v", v, err)
+			return err
+		}
+	}
+	if err := redisClient.Flush(); err != nil {
+		UtilLogErrorf("Flush() returned error %v", err)
+		return err
+	}
+	for k, v := range args {
+		result, err := redisClient.Receive()
+		if err != nil {
+			UtilLogErrorf("Receive(%v) returned error %v", v, err)
+			return err
+		}
+		if result == nil {
+			value[k] = nil
+			continue
+		}
+		if reflect.TypeOf(result).Kind() == reflect.Slice {
+
+			byteResult := (result.([]byte))
+			strResult := string(byteResult)
+
+			if strResult == "[]" {
+				value[k] = nil
+				continue
+			}
+		}
+
+		errorJson := json.Unmarshal(result.([]byte), value[k])
+
+		if errorJson != nil {
+			UtilLogErrorf("get %s command result failed:%s", cmd, errorJson.Error())
+			return errorJson
+		}
+	}
+
+	return nil
+}
+
+//pipeline end
