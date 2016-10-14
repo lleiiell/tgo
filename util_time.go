@@ -1,6 +1,7 @@
 package tgo
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -49,8 +50,14 @@ func UtilTimeIsExpired(expirationTime time.Time) bool {
 	return after
 }
 
+//UtilTimeConsumePrint print time consume
+func UtilTimeConsumePrint(timeBefore time.Time, prefix string) {
+	duration := time.Now().Sub(timeBefore)
+	fmt.Printf("%s time :%d\n", prefix, duration.Nanoseconds()/1000000)
+}
+
 func UtilTimeIsLeapYear(y int) bool {
-	if (y % 400 == 0) || (y % 4 == 0 && y % 100 != 0) {
+	if (y%400 == 0) || (y%4 == 0 && y%100 != 0) {
 		return true
 	} else {
 		return false

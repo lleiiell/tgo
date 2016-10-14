@@ -1,5 +1,11 @@
 {
   "Address":[
     "http://172.172.177.16:9200"
-  ]
+  ],
+  "ClientMaxTotal":10,
+  "ClientMaxIdle":10,
+  "ClientMinIdle":5,
+  "ClientLifo":true,
+  "Timeout":3000,
+  "TransportMaxIdel":10
 }

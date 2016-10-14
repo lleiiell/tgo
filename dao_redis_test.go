@@ -86,10 +86,12 @@ func Test_MSet(t *testing.T) {
 func Test_MGet(t *testing.T) {
 	redis := NewRedisTest()
 
-	_, err := redis.MGet("mset1", "mset2", "mset4", "mset3")
+	value, err := redis.MGet("mset1", "mset2", "mset4", "mset3")
 
 	if err != nil {
 		t.Errorf("result false:%s", err.Error())
+	} else if len(value) != 4 {
+		t.Errorf("len is < 4:%d", len(value))
 	}
 
 }
@@ -111,8 +113,8 @@ func Test_HMGet(t *testing.T) {
 
 	if err != nil {
 		t.Errorf("result false:%s", err.Error())
-	} else {
-		t.Errorf("result true:%v", data)
+	} else if len(data) != 3 {
+		t.Errorf("len is lt :%d", len(data))
 	}
 }
 
@@ -147,26 +149,13 @@ func (c *TestDaoRedis) Set(name string, key string) bool {
 func (c *TestDaoRedis) Get(name string, key *string) bool {
 	return c.DaoRedis.Get(name, key)
 }
-func (c *TestDaoRedis) MGet(keys ...string) (map[string]ModelRedisHello, error) {
+func (c *TestDaoRedis) MGet(keys ...string) ([]*ModelRedisHello, error) {
 
-	var datas []interface{}
+	var datas []*ModelRedisHello
 
-	for range keys {
-		datas = append(datas, &ModelRedisHello{})
-	}
-	err := c.DaoRedis.MGet(keys, datas)
+	err := c.DaoRedis.MGet(keys, &datas)
 
-	if err == nil {
-		value := make(map[string]ModelRedisHello)
-
-		for i, v := range datas {
-			if v != nil {
-				value[keys[i]] = *v.(*ModelRedisHello)
-			}
-		}
-		return value, nil
-	}
-	return nil, err
+	return datas, err
 }
 
 func (c *TestDaoRedis) Del(key string) bool {
@@ -182,28 +171,18 @@ func (c *TestDaoRedis) HMSet(key string, value map[string]ModelRedisHello) bool 
 	return c.DaoRedis.HMSet(key, datas)
 }
 
-func (c *TestDaoRedis) HMGet(key string, fields ...string) (map[string]ModelRedisHello, error) {
-	var datas []interface{}
+func (c *TestDaoRedis) HMGet(key string, fields ...string) ([]*ModelRedisHello, error) {
+	var datas []*ModelRedisHello
 
 	var args []interface{}
 
 	for _, item := range fields {
 		args = append(args, item)
-		datas = append(datas, &ModelRedisHello{})
+		//datas = append(datas, &ModelRedisHello{})
 	}
-	err := c.DaoRedis.HMGet(key, args, datas)
+	err := c.DaoRedis.HMGet(key, args, &datas)
 
-	if err == nil {
-		value := make(map[string]ModelRedisHello)
-
-		for k, v := range datas {
-			if v != nil {
-				value[fields[k]] = *v.(*ModelRedisHello)
-			}
-		}
-		return value, nil
-	}
-	return nil, err
+	return datas, err
 }
 
 func (c *TestDaoRedis) ZAddM(key string, value map[int]int) bool {
