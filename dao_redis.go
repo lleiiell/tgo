@@ -149,7 +149,7 @@ func (b *DaoRedis) getKey(key string) string {
 	return fmt.Sprintf("%s:%s:%s", prefixRedis, b.KeyName, key)
 }
 
-func (b *DaoRedis) doSet(cmd string, key string, value interface{}, fields ...string) (interface{}, error) {
+func (b *DaoRedis) doSet(cmd string, key string, value interface{}, expire int, fields ...string) (interface{}, error) {
 
 	redisResource, err := b.InitRedisPool()
 
@@ -169,26 +169,48 @@ func (b *DaoRedis) doSet(cmd string, key string, value interface{}, fields ...st
 		UtilLogErrorf("redis %s marshal data to json:%s", cmd, errJson.Error())
 		return nil, errJson
 	}
+
+	if expire == 0 {
+		cacheConfig := ConfigCacheGetRedis()
+
+		expire = cacheConfig.Expire
+	}
+
 	var reply interface{}
 	var errDo error
 
 	if len(fields) == 0 {
-		reply, errDo = redisClient.Do(cmd, key, data)
+		if expire > 0 && strings.ToUpper(cmd) == "SET" {
+			reply, errDo = redisClient.Do(cmd, key, data, "ex", expire)
+		} else {
+			reply, errDo = redisClient.Do(cmd, key, data)
+		}
+
 	} else {
 		field := fields[0]
+
 		reply, errDo = redisClient.Do(cmd, key, field, data)
+
 	}
 
 	if errDo != nil {
 		UtilLogErrorf("run redis command %s failed:error:%s,key:%s,fields:%v,data:%v", cmd, errDo.Error(), key, fields, value)
 		return nil, errDo
 	}
+	//set expire
+	if expire > 0 && strings.ToUpper(cmd) != "SET" {
+		_, errExpire := redisClient.Do("EXPIRE", key, expire)
+		if errExpire != nil {
+			UtilLogErrorf("run redis EXPIRE command failed: error:%s,key:%s,time:%d", errExpire.Error(), key, expire)
+		}
+	}
+
 	return reply, errDo
 }
 
-func (b *DaoRedis) doSetNX(cmd string, key string, value interface{}, field ...string) (int64, bool) {
+func (b *DaoRedis) doSetNX(cmd string, key string, value interface{}, expire int, field ...string) (int64, bool) {
 
-	reply, err := b.doSet(cmd, key, value, field...)
+	reply, err := b.doSet(cmd, key, value, expire, field...)
 
 	if err != nil {
 		return 0, false
@@ -234,6 +256,16 @@ func (b *DaoRedis) doMSet(cmd string, key string, value map[string]interface{}) 
 		}
 
 	}
+	/*
+		if expire == 0 {
+			cacheConfig := ConfigCacheGetRedis()
+
+			expire = cacheConfig.Expire
+		}
+
+		if expire > 0 {
+			args = append(args, "ex", expire)
+		}*/
 
 	redisClient := redisResource.(ResourceConn)
 
@@ -413,7 +445,7 @@ func (b *DaoRedis) doMGet(cmd string, args []interface{}, value []interface{}) e
 	return nil
 }
 */
-func (b *DaoRedis) doIncr(cmd string, key string, value int, fields ...string) (int, bool) {
+func (b *DaoRedis) doIncr(cmd string, key string, value int, expire int, fields ...string) (int, bool) {
 
 	redisResource, err := b.InitRedisPool()
 
@@ -450,6 +482,20 @@ func (b *DaoRedis) doIncr(cmd string, key string, value int, fields ...string) (
 
 		return 0, false
 	}
+
+	if expire == 0 {
+		cacheConfig := ConfigCacheGetRedis()
+
+		expire = cacheConfig.Expire
+	}
+	//set expire
+	if expire > 0 {
+		_, errExpire := redisClient.Do("EXPIRE", key, expire)
+		if errExpire != nil {
+			UtilLogErrorf("run redis EXPIRE command failed: error:%s,key:%s,time:%d", errExpire.Error(), key, expire)
+		}
+	}
+
 	return int(count), true
 }
 
@@ -477,14 +523,15 @@ func (b *DaoRedis) doDel(cmd string, data ...interface{}) error {
 /*基础结束*/
 
 func (b *DaoRedis) Set(key string, value interface{}) bool {
-
-	_, err := b.doSet("SET", key, value)
+	_, err := b.doSet("SET", key, value, 0)
 
 	if err != nil {
 		return false
 	}
 	return true
 }
+
+//MSet mset
 func (b *DaoRedis) MSet(datas map[string]interface{}) bool {
 	_, err := b.doMSet("MSET", "", datas)
 	if err != nil {
@@ -493,22 +540,19 @@ func (b *DaoRedis) MSet(datas map[string]interface{}) bool {
 	return true
 }
 
-func (b *DaoRedis) SetEx(key string, value interface{}, time int) bool {
+//SetEx setex
+func (b *DaoRedis) SetEx(key string, value interface{}, expire int) bool {
 
-	_, err := b.doSet("SET", key, value)
+	_, err := b.doSet("SET", key, value, expire)
 
 	if err != nil {
 		return false
 	}
-	e := b.Expire(key, time)
-	if e {
-		return true
-	} else {
-		return false
-	}
+	return true
 }
 
-func (b *DaoRedis) Expire(key string, time int) bool {
+//Expire expire
+func (b *DaoRedis) Expire(key string, expire int) bool {
 	redisResource, err := b.InitRedisPool()
 	if err != nil {
 		return false
@@ -516,9 +560,9 @@ func (b *DaoRedis) Expire(key string, time int) bool {
 	key = b.getKey(key)
 	defer redisPool.Put(redisResource)
 	redisClient := redisResource.(ResourceConn)
-	_, err = redisClient.Do("EXPIRE", key, time)
+	_, err = redisClient.Do("EXPIRE", key, expire)
 	if err != nil {
-		UtilLogErrorf("run redis EXPIRE command failed: error:%s,key:%s,time:%d", err.Error(), key, time)
+		UtilLogErrorf("run redis EXPIRE command failed: error:%s,key:%s,time:%d", err.Error(), key, expire)
 		return false
 	}
 
@@ -555,16 +599,16 @@ func (b *DaoRedis) MGet(keys []string, data interface{}) error {
 
 func (b *DaoRedis) Incr(key string) (int, bool) {
 
-	return b.doIncr("INCRBY", key, 1)
+	return b.doIncr("INCRBY", key, 1, 0)
 }
 
 func (b *DaoRedis) IncrBy(key string, value int) (int, bool) {
 
-	return b.doIncr("INCRBY", key, value)
+	return b.doIncr("INCRBY", key, value, 0)
 }
 func (b *DaoRedis) SetNX(key string, value interface{}) (int64, bool) {
 
-	return b.doSetNX("SETNX", key, value)
+	return b.doSetNX("SETNX", key, value, 0)
 }
 
 func (b *DaoRedis) Del(key string) bool {
@@ -598,7 +642,7 @@ func (b *DaoRedis) MDel(key ...string) bool {
 //hash start
 func (b *DaoRedis) HIncrby(key string, field string, value int) (int, bool) {
 
-	return b.doIncr("HINCRBY", key, value, field)
+	return b.doIncr("HINCRBY", key, value, 0, field)
 }
 
 func (b *DaoRedis) HGet(key string, field string, value interface{}) bool {
@@ -635,7 +679,7 @@ func (b *DaoRedis) HMGet(key string, fields []interface{}, data interface{}) err
 
 func (b *DaoRedis) HSet(key string, field string, value interface{}) bool {
 
-	_, err := b.doSet("HSET", key, value, field)
+	_, err := b.doSet("HSET", key, value, 0, field)
 
 	if err != nil {
 		return false
@@ -644,7 +688,7 @@ func (b *DaoRedis) HSet(key string, field string, value interface{}) bool {
 }
 func (b *DaoRedis) HSetNX(key string, field string, value interface{}) (int64, bool) {
 
-	return b.doSetNX("HSETNX", key, value, field)
+	return b.doSetNX("HSETNX", key, value, 0, field)
 }
 
 //HMSet value是filed:data
@@ -736,7 +780,7 @@ func (b *DaoRedis) ZAddM(key string, value map[string]interface{}) bool {
 	return true
 }
 
-func (b *DaoRedis) ZGet(key string, sort bool, start int, end int, value []interface{}) error {
+func (b *DaoRedis) ZGet(key string, sort bool, start int, end int, value interface{}) error {
 
 	var cmd string
 	if sort {
@@ -749,12 +793,13 @@ func (b *DaoRedis) ZGet(key string, sort bool, start int, end int, value []inter
 	args = append(args, b.getKey(key))
 	args = append(args, start)
 	args = append(args, end)
+
 	err := b.doMGet(cmd, args, value)
 
 	return err
 }
 
-func (b *DaoRedis) ZRevRange(key string, start int, end int, value []interface{}) error {
+func (b *DaoRedis) ZRevRange(key string, start int, end int, value interface{}) error {
 	return b.ZGet(key, false, start, end, value)
 }
 
@@ -838,7 +883,7 @@ func (b *DaoRedis) Push(value interface{}, isLeft bool) bool {
 
 	key := ""
 
-	_, err := b.doSet(cmd, key, value)
+	_, err := b.doSet(cmd, key, value, -1)
 
 	if err != nil {
 		return false

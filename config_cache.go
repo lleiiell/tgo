@@ -17,6 +17,7 @@ type ConfigCache struct {
 type ConfigCacheRedis struct {
 	Address         []string
 	Prefix          string
+	Expire          int
 	ReadTimeout     int
 	WriteTimeout    int
 	ConnectTimeout  int
@@ -53,7 +54,7 @@ func configCacheClear() {
 }
 
 func configCacheGetDefault() *ConfigCache {
-	return &ConfigCache{Redis: ConfigCacheRedis{[]string{"172.172.177.15:33062"},"component", 1000, 1000, 1000, 10, 100, 180000, 2}}
+	return &ConfigCache{Redis: ConfigCacheRedis{[]string{"172.172.177.15:33062"}, "component", 604800, 1000, 1000, 1000, 10, 100, 180000, 2}}
 }
 
 func ConfigCacheGetRedis() *ConfigCacheRedis {

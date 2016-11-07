@@ -9,10 +9,10 @@ type ModelRedisHello struct {
 	HelloWord string
 }
 
-func Test_Call(t *testing.T) {
+func Test_Redis_Set(t *testing.T) {
 	redis := NewRedisTest()
 
-	redis.Set("tonyjt", "1234567")
+	redis.Set("tonyjt", "12345678")
 
 	var data string
 	result := redis.Get("tonyjt", &data)
@@ -22,7 +22,47 @@ func Test_Call(t *testing.T) {
 	}
 }
 
-func Test_Del(t *testing.T) {
+func Test_Redis_SetEx(t *testing.T) {
+	redis := NewRedisTest()
+
+	result := redis.SetEx("setex", "asdfsdf", 60)
+
+	if !result {
+		t.Error("result false")
+	}
+}
+
+func Test_Redis_Incr(t *testing.T) {
+	redis := NewRedisTest()
+
+	_, result := redis.Incr("incr")
+
+	if !result {
+		t.Error("result false")
+	}
+}
+
+func Test_Redis_HSet(t *testing.T) {
+	redis := NewRedisTest()
+
+	result := redis.HSet("hset", "k1", "sdfsdf")
+
+	if !result {
+		t.Error("result false")
+	}
+}
+
+func Test_Redis_HSetNX(t *testing.T) {
+	redis := NewRedisTest()
+
+	_, result := redis.HSetNX("hsetnx", "h1", "123123")
+
+	if !result {
+		t.Error("result false")
+	}
+}
+
+func Test_Redis_Del(t *testing.T) {
 	redis := NewRedisTest()
 
 	result := redis.Del("tonyjt")
@@ -30,8 +70,17 @@ func Test_Del(t *testing.T) {
 		t.Error("result false")
 	}
 }
+func Test_Redis_HIncrby(t *testing.T) {
+	redis := NewRedisTest()
 
-func Test_HMSet(t *testing.T) {
+	_, result := redis.HIncrby("hincr", "1", 1)
+
+	if !result {
+		t.Error("result false")
+	}
+}
+
+func Test_Redis_HMSet(t *testing.T) {
 	redis := NewRedisTest()
 
 	datas := make(map[string]ModelRedisHello)
@@ -46,7 +95,7 @@ func Test_HMSet(t *testing.T) {
 	}
 }
 
-func Test_ZAddM(t *testing.T) {
+func Test_Redis_ZAddM(t *testing.T) {
 	redis := NewRedisTest()
 
 	datas := make(map[int]int)
@@ -62,7 +111,7 @@ func Test_ZAddM(t *testing.T) {
 	}
 }
 
-func Test_ZRem(t *testing.T) {
+func Test_Redis_ZRem(t *testing.T) {
 	redis := NewRedisTest()
 
 	result := redis.ZRem("zaddm1", 2, 3)
@@ -71,7 +120,7 @@ func Test_ZRem(t *testing.T) {
 		t.Errorf("result false")
 	}
 }
-func Test_MSet(t *testing.T) {
+func Test_Redis_MSet(t *testing.T) {
 	redis := NewRedisTest()
 	value := make(map[string]ModelRedisHello)
 	value["mset1"] = ModelRedisHello{HelloWord: "1"}
@@ -83,7 +132,7 @@ func Test_MSet(t *testing.T) {
 	}
 }
 
-func Test_MGet(t *testing.T) {
+func Test_Redis_MGet(t *testing.T) {
 	redis := NewRedisTest()
 
 	value, err := redis.MGet("mset1", "mset2", "mset4", "mset3")
@@ -96,7 +145,7 @@ func Test_MGet(t *testing.T) {
 
 }
 
-func Test_HDel(t *testing.T) {
+func Test_Redis_HDel(t *testing.T) {
 	redis := NewRedisTest()
 
 	key := "hmset1"
@@ -106,7 +155,7 @@ func Test_HDel(t *testing.T) {
 		t.Error("result false")
 	}
 }
-func Test_HMGet(t *testing.T) {
+func Test_Redis_HMGet(t *testing.T) {
 	redis := NewRedisTest()
 
 	data, err := redis.HMGet("hmset1", "1", "2", "3")
@@ -118,7 +167,7 @@ func Test_HMGet(t *testing.T) {
 	}
 }
 
-func Test_ZRevRange(t *testing.T) {
+func Test_Redis_ZRevRange(t *testing.T) {
 	redis := NewRedisTest()
 
 	data, err := redis.ZRevRange("zaddm", 0, 1)
@@ -200,19 +249,16 @@ func (c *TestDaoRedis) ZRem(key string, data ...interface{}) bool {
 }
 
 func (c *TestDaoRedis) ZRevRange(key string, start int, end int) ([]ModelRedisHello, error) {
-	var data []interface{}
 
-	for i := start; i <= end; i++ {
-		data = append(data, &ModelRedisHello{})
-	}
+	var data []*ModelRedisHello
 
-	err := c.DaoRedis.ZRevRange(key, start, end, data)
+	err := c.DaoRedis.ZRevRange(key, start, end, &data)
 	var value []ModelRedisHello
 	if err == nil {
 
 		for _, item := range data {
 			if item != nil {
-				value = append(value, *item.(*ModelRedisHello))
+				value = append(value, *item)
 			} else {
 				value = append(value, ModelRedisHello{})
 			}
