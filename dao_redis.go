@@ -869,7 +869,12 @@ func (b *DaoRedis) LLEN(key string) (interface{},error) {
 		return 0, nil
 	}
 
-	return result, nil
+	num, ok := result.(int64)
+	if !ok {
+		return 0,errors.New("result to int64 failed")
+	}
+
+	return num, nil
 }
 
 func (b *DaoRedis) LREM(key string, count int, data interface{}) int {
