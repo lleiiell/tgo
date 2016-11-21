@@ -856,7 +856,7 @@ func (b *DaoRedis) LLEN(key string) (interface{},error) {
 
 	var args []interface{}
 	args = append(args, key)
-	result, errDo = redisClient.Do(cmd, "component:queue:reward:0")
+	result, errDo = redisClient.Do(cmd, key)
 
 	if errDo != nil {
 
