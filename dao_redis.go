@@ -838,6 +838,40 @@ func (b *DaoRedis) LRange(key string, start int, end int, value interface{}) boo
 	}
 }
 
+func (b *DaoRedis) LLEN(key string) (interface{},error) {
+	cmd := "LLEN"
+
+	redisResource, err := b.InitRedisPool()
+
+	if err != nil {
+		return 0, err
+	}
+	defer redisPool.Put(redisResource)
+
+	redisClient := redisResource.(ResourceConn)
+	key = b.getKey(key)
+
+	var result interface{}
+	var errDo error
+
+	var args []interface{}
+	args = append(args, key)
+	result, errDo = redisClient.Do(cmd, "component:queue:reward:0")
+
+	if errDo != nil {
+
+		UtilLogErrorf("run redis %s command failed: error:%s,key:%s", cmd, errDo.Error(), key)
+
+		return 0, errDo
+	}
+
+	if result == nil {
+		return 0, nil
+	}
+
+	return result, nil
+}
+
 func (b *DaoRedis) LREM(key string, count int, data interface{}) int {
 	redisResource, err := b.InitRedisPool()
 
