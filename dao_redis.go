@@ -838,7 +838,7 @@ func (b *DaoRedis) LRange(key string, start int, end int, value interface{}) boo
 	}
 }
 
-func (b *DaoRedis) LLEN(key string) (int64,error) {
+func (b *DaoRedis) LLen(key string) (int64,error) {
 	cmd := "LLEN"
 
 	redisResource, err := b.InitRedisPool()
