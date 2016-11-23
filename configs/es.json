@@ -1,6 +1,6 @@
 {
   "Address":[
-    "http://172.172.177.16:9200"
+    "ip"
   ],
   "ClientMaxTotal":10,
   "ClientMaxIdle":10,

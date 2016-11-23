@@ -1,7 +1,7 @@
 {
 	"redis":{
-		"Address":["172.172.177.20:63793","172.172.177.21:63793","172.172.177.22:63793"],
-		"Prefix":"component",
+		"Address":["ip:port","ip:port"],
+		"Prefix":"prefix",
 		"Expire":604800,
 		"ConnectTimeout":1000,
 		"ReadTimeout":1000,

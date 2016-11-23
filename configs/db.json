@@ -10,21 +10,21 @@
 			"PoolWaitTimeout":30
 		},
 		"Write":{
-			"Address":"172.172.177.20",
-			"Port":33069,
+			"Address":"ip",
+			"Port":3306,
 			"User":"root",
-			"Password":"root@dev"
+			"Password":"root"
 		},
 		"Reads":[{
-			"Address":"172.172.177.20",
-			"Port":33069,
+			"Address":"ip",
+			"Port":3306,
 			"User":"root",
-			"Password":"root@dev"
+			"Password":"root"
 		}]
 	},
 	"Mongo":{
-		"DbName":"component",
-		"Servers":"172.172.177.20:34004",
+		"DbName":"com",
+		"Servers":"",
 		"Read_option":"PRIMARY",
 		"Timeout": 1000,
 		"PoolLimit":30
