@@ -50,7 +50,7 @@ func configESClear() {
 
 func configESGetDefault() *ConfigES {
 
-	return &ConfigES{Address: []string{"http://172.172.177.16:9200"},
+	return &ConfigES{Address: []string{"url"},
 		ClientPool:       true,
 		ClientMaxTotal:   20,
 		ClientMinIdle:    2,

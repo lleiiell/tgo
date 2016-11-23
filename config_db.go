@@ -29,17 +29,17 @@ type ConfigDbBase struct {
 }
 
 type ConfigDbPool struct {
-	PoolMinCap   int
-	PoolExCap   int
-	PoolMaxCap   int
+	PoolMinCap      int
+	PoolExCap       int
+	PoolMaxCap      int
 	PoolIdleTimeout time.Duration
-	PoolWaitCount int64
+	PoolWaitCount   int64
 	PoolWaitTimeout time.Duration
 }
 
 type ConfigMysql struct {
 	DbName string
-	Pool ConfigDbPool
+	Pool   ConfigDbPool
 	Write  ConfigDbBase
 	Reads  []ConfigDbBase
 }
@@ -51,7 +51,6 @@ type ConfigMongo struct {
 	Timeout     int
 	PoolLimit   int
 }
-
 
 func configDbInit() {
 
@@ -79,12 +78,12 @@ func configDbClear() {
 }
 func configDbGetDefault() *ConfigDb {
 	return &ConfigDb{Mysql: ConfigMysql{
-		DbName:"",
-		Pool : ConfigDbPool{5, 5, 20, 3600, 100, 60},
-		Write: ConfigDbBase{"172.172.177.15", 33062, "root", "root@dev", ""},
-		Reads: []ConfigDbBase{ConfigDbBase{"172.172.177.15", 33062, "root", "root@dev", ""},
-			ConfigDbBase{"172.172.177.15", 33062, "root", "root@dev", ""}}},
-		Mongo: ConfigMongo{DbName: "Component", Servers: "172.172.177.20:36004", Read_option: "PRIMARY", Timeout: 1000,PoolLimit:30}}
+		DbName: "",
+		Pool:   ConfigDbPool{5, 5, 20, 3600, 100, 60},
+		Write:  ConfigDbBase{"ip", 33062, "user", "password", ""},
+		Reads: []ConfigDbBase{ConfigDbBase{"ip", 3306, "user", "password", ""},
+			ConfigDbBase{"ip", 33062, "user", "password", ""}}},
+		Mongo: ConfigMongo{DbName: "dbname", Servers: "servers", Read_option: "PRIMARY", Timeout: 1000, PoolLimit: 30}}
 }
 
 func NewConfigMysql() *ConfigMysql {
