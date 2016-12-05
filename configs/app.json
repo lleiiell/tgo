@@ -1,13 +1,9 @@
 {
 	"Configs":{
 		"Env":"dev",
-		"UrlUserLogin":"http://user.haiziwang.com/user/CheckLogin",
-		"AoUserHost":"172.172.177.5:53101",
-		"AoCouponHost":"172.172.177.29:53101",
-		"UrlMqServer":"172.172.177.17:61627",
-		"UrlQuestion":"question.haiziwang.com:8382/sojump/check",
-		"AppSecretKey":"std::string",//签名token
-		"AppAccessLimitTime":"0",//每次请求可访问时间区间
-		"SignSwitch":"0"//验签开关
+		"UrlMqServer":"ip",
+		"AppSecretKey":"std::string",
+		"AppAccessLimitTime":"0",
+		"SignSwitch":"0"
 	}
 }

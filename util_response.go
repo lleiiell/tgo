@@ -7,17 +7,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func UtilResponseReturnJson(c *gin.Context, code int, model interface{}) {
-
+func UtilResponseReturnJsonNoP(c *gin.Context, code int, model interface{}) {
 	msg := ConfigCodeGetMessage(code)
-
-	UtilResponseReturnJsonWithMsg(c, code, msg, model)
+	UtilResponseReturnJsonWithMsg(c, code, msg, model, false)
 }
 
-func UtilResponseReturnJsonWithMsg(c *gin.Context, code int, msg string, model interface{}) {
+func UtilResponseReturnJson(c *gin.Context, code int, model interface{}) {
+	msg := ConfigCodeGetMessage(code)
+	UtilResponseReturnJsonWithMsg(c, code, msg, model, true)
+}
 
+func UtilResponseReturnJsonWithMsg(c *gin.Context, code int, msg string, model interface{}, callbackFlag bool) {
 	var rj interface{}
-
 	if code == 0 {
 		code = 1001
 	}
@@ -30,12 +31,15 @@ func UtilResponseReturnJsonWithMsg(c *gin.Context, code int, msg string, model i
 	rj = gin.H{
 		"code":    code,
 		"message": msg,
-		"data":    model}
+		"data":    model,
+	}
 
-	callback := c.Query("callback")
+	var callback string
+	if callbackFlag {
+		callback = c.Query("callback")
+	}
 
 	if UtilIsEmpty(callback) {
-
 		c.JSON(200, rj)
 	} else {
 		b, err := json.Marshal(rj)
@@ -48,7 +52,6 @@ func UtilResponseReturnJsonWithMsg(c *gin.Context, code int, msg string, model i
 }
 
 func UtilResponseReturnJsonFailed(c *gin.Context, code int) {
-
 	UtilResponseReturnJson(c, code, nil)
 }
 

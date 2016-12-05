@@ -1,0 +1,11 @@
+{
+  "Address":[
+    "ip"
+  ],
+  "ClientMaxTotal":10,
+  "ClientMaxIdle":10,
+  "ClientMinIdle":5,
+  "ClientLifo":true,
+  "Timeout":3000,
+  "TransportMaxIdel":10
+}

@@ -3,8 +3,10 @@ package tgo
 import (
 	"encoding/json"
 	"errors"
-	"github.com/go-stomp/stomp"
+	"reflect"
 	"strings"
+
+	"github.com/go-stomp/stomp"
 )
 
 var (
@@ -62,10 +64,16 @@ func UtilMQSend(key string, data interface{}) error {
 	defer conn.Disconnect()
 
 	var msg []byte
-	msg, err = json.Marshal(data)
-	if err != nil {
-		return err
+
+	if reflect.TypeOf(data).Kind() == reflect.String {
+		msg = []byte(data.(string))
+	} else {
+		msg, err = json.Marshal(data)
+		if err != nil {
+			return err
+		}
 	}
+
 	err = conn.Send(key, "text/plain", msg)
 
 	if err != nil {
