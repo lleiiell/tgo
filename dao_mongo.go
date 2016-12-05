@@ -85,7 +85,6 @@ func (m *DaoMongo) GetSession() (*mgo.Session, string, error) {
 			mgo.SetDebug(true)
 		}*/
 
-
 	m.processError(errors.New("Mongo Error"), "session mongo is nul")
 	return nil, configMongo.DbName, errors.New("session mongo is nul")
 }

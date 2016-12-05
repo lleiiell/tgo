@@ -675,7 +675,7 @@ func (b *DaoRedis) HGetRaw(key string, field string, value interface{}) (bool, e
     return b.doGet("HGET", key, value, field)
 }
 
-func (b *DaoRedis) HMGet(key string, fields []interface{}, data []interface{}) error {
+func (b *DaoRedis) HMGet(key string, fields []interface{}, data interface{}) error {
 	var args []interface{}
 
 	args = append(args, b.getKey(key))
