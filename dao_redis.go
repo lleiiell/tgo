@@ -584,6 +584,13 @@ func (b *DaoRedis) GetE(key string, data interface{}) error {
 
 	return err
 }
+
+// 返回 1. key是否存在 2. error
+func (b *DaoRedis) GetRaw(key string, data interface{}) (bool, error) {
+
+    return b.doGet("GET", key, data)
+}
+
 func (b *DaoRedis) MGet(keys []string, data interface{}) error {
 
 	var args []interface{}
@@ -661,6 +668,11 @@ func (b *DaoRedis) HGetE(key string, field string, value interface{}) error {
 	_, err := b.doGet("HGET", key, value, field)
 
 	return err
+}
+
+//HGetRaw 返回 1. key是否存在 2. error
+func (b *DaoRedis) HGetRaw(key string, field string, value interface{}) (bool, error) {
+    return b.doGet("HGET", key, value, field)
 }
 
 func (b *DaoRedis) HMGet(key string, fields []interface{}, data interface{}) error {
