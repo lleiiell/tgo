@@ -591,7 +591,7 @@ func (b *DaoRedis) GetRaw(key string, data interface{}) (bool, error) {
     return b.doGet("GET", key, data)
 }
 
-func (b *DaoRedis) MGet(keys []string, data []interface{}) error {
+func (b *DaoRedis) MGet(keys []string, data interface{}) error {
 
 	var args []interface{}
 
