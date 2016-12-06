@@ -5,3 +5,4 @@
 
 src/github.com/golang/lint/
 .vscode/settings.json
+src/github.com/newhook/go-symbols/
