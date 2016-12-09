@@ -1,8 +1,9 @@
 
 *.a
-
-*.a
-
-src/github.com/golang/lint/
-.vscode/settings.json
-src/github.com/newhook/go-symbols/
+src/github.com/*
+.idea
+.vscode/
+bin/
+pkg/
+Would skip repository src/github.com/newhook/go-symbols
+src/github.com/cweill
