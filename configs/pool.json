@@ -1,0 +1,19 @@
+{
+  "Configs": {
+    "test":{
+      "Address":["test.config","test1.config"],
+      "Lifo":true
+    },
+    "grpc-test":{
+      "Address":["localhost:50051"],
+      "MaxTotal":10,
+      "MinIdle":1,
+      "MaxIdle":5,
+      "BlockWhenExhausted":true,
+      "MaxWaitMillis":3000,
+      "Lifo":true
+    }
+  }
+
+
+}
