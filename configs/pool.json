@@ -5,7 +5,7 @@
       "Lifo":true
     },
     "grpc-test":{
-      "Address":["localhost:50051"],
+      "Address":["172.172.177.19:7001","172.172.178.34:7001"],
       "MaxTotal":10,
       "MinIdle":1,
       "MaxIdle":5,

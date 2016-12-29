@@ -1,12 +1,13 @@
 package tgo
 
 import (
-	"context"
-	"fmt"
+	/*"context"
+	"fmt"*/
 	"google.golang.org/grpc"
-	pb "google.golang.org/grpc/examples/helloworld/helloworld"
+	/*pb "google.golang.org/grpc/examples/helloworld/helloworld"
 	"log"
-	"sync"
+	"sync"*/
+	"log"
 	"testing"
 )
 
@@ -20,11 +21,28 @@ func TestDaoGRPC_GetConn(t *testing.T) {
 	if err != nil {
 		t.Errorf("get failed:%s", err.Error())
 	} else {
-		t.Errorf("conn :%v", conn)
+		log.Printf("conn:%v\n", conn)
 		defer daoGrpc.CloseConn(conn)
 	}
 }
+func BenchmarkDaoGRPC_GetConn(b *testing.B) {
+	daoGrpc := &DaoGRPC{}
+	daoGrpc.DialOptions = append(daoGrpc.DialOptions, grpc.WithInsecure())
+	daoGrpc.ServerName = "test"
 
+	for i := 0; i < b.N; i++ {
+		conn, err := daoGrpc.GetConn()
+
+		if err != nil {
+			b.Errorf("get failed:%s", err.Error())
+		} else {
+			log.Printf("conn:%v\n", conn)
+			daoGrpc.CloseConn(conn)
+		}
+	}
+}
+
+/*
 func TestDaoGRPC_HelloWorld(t *testing.T) {
 	daoGrpc := &DaoGRPC{}
 	daoGrpc.DialOptions = append(daoGrpc.DialOptions, grpc.WithInsecure())
@@ -86,3 +104,4 @@ func BenchmarkDaoGRPC_HelloWorld(b *testing.B) {
 	}
 	wg.Wait()
 }
+*/
