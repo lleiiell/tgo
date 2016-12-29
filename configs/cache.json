@@ -1,13 +1,26 @@
 {
-	"redis":{
-		"Address":["ip:port","ip:port"],
-		"Prefix":"prefix",
-		"Expire":604800,
-		"ConnectTimeout":1000,
-		"ReadTimeout":1000,
-		"WriteTimeout":1000,
-		"PoolMaxIdel":50,
-		"PoolMaxActive":10,
-		"PoolIdleTimeout":60000
-	}
+    "redis":{
+        "Address":["ip:port","ip:port"],
+        "Prefix":"prefix",
+        "Expire":604800,
+        "ConnectTimeout":1000,
+        "ReadTimeout":1000,
+        "WriteTimeout":1000,
+        "PoolMaxIdel":50,
+        "PoolMaxActive":10,
+        "PoolIdleTimeout":60000
+
+    },
+    "redisp":{
+        "Address":["ip:port","ip:port"],
+        "Prefix":"prefixp",
+        "Expire":604800,
+        "ConnectTimeout":1000,
+        "ReadTimeout":1000,
+        "WriteTimeout":1000,
+        "PoolMaxIdel":50,
+        "PoolMaxActive":10,
+        "PoolIdleTimeout":60000
+
+    }
 }

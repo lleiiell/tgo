@@ -17,12 +17,41 @@ import (
 
 type DaoRedis struct {
 	KeyName string
+    Persistent bool // 持久化key
 }
 
-var (
-	redisPool    *pools.ResourcePool
-	redisPoolMux sync.Mutex
-)
+type redisPool struct {
+    redisPool    *pools.ResourcePool
+    redisPoolMux sync.Mutex
+    redisPPool    *pools.ResourcePool // 持久化Pool
+    redisPPoolMux sync.Mutex
+}
+
+func (p *redisPool) Get(persistent bool) (*pools.ResourcePool, sync.Mutex) {
+    if persistent{
+        return p.redisPPool, p.redisPPoolMux
+    } else {
+        return p.redisPool,p.redisPoolMux
+    }
+}
+
+func (p *redisPool) Set(pool *pools.ResourcePool, persistent bool) {
+    if persistent{
+        p.redisPPool = pool
+    } else {
+        p.redisPool = pool
+    }
+}
+
+func (p *redisPool) Put(resource pools.Resource, persistent bool) {
+    if persistent{
+        p.redisPPool.Put(resource)
+    } else {
+        p.redisPool.Put(resource)
+    }
+}
+
+var daoPool redisPool
 
 type ResourceConn struct {
 	redis.Conn
@@ -36,7 +65,7 @@ func (r ResourceConn) Close() {
 /*
 func (b *DaoRedis) InitRedis() (redis.Conn, error) {
 
-	cacheConfig := ConfigCacheGetRedis()
+	cacheConfig := ConfigCacheGetRedisWithConn(b.Persistent)()
 
 	conn, err := redis.DialTimeout("tcp", fmt.Sprintf("%s:%d", cacheConfig.Address, cacheConfig.Port), time.Duration(cacheConfig.ConnectTimeout)*time.Millisecond, time.Duration(cacheConfig.ReadTimeout)*time.Millisecond, time.Duration(cacheConfig.WriteTimeout)*time.Millisecond)
 
@@ -49,9 +78,9 @@ func (b *DaoRedis) InitRedis() (redis.Conn, error) {
 	return conn, err
 }
 */
-func (b *DaoRedis) dail(fromIndex int) (redis.Conn, int, error) {
+func (b *DaoRedis) dial(fromIndex int) (redis.Conn, int, error) {
 
-	cacheConfig := ConfigCacheGetRedis()
+	cacheConfig := ConfigCacheGetRedisWithConn(b.Persistent)
 
 	if len(cacheConfig.Address) > 0 {
 		if fromIndex+1 > len(cacheConfig.Address) {
@@ -77,32 +106,40 @@ func (b *DaoRedis) dail(fromIndex int) (redis.Conn, int, error) {
 }
 func (b *DaoRedis) InitRedisPool() (pools.Resource, error) {
 
-	if redisPool == nil || redisPool.IsClosed() {
+    var poolHandler *pools.ResourcePool
+    var poolMux sync.Mutex
 
-		redisPoolMux.Lock()
+    poolHandler, poolMux = daoPool.Get(b.Persistent)
 
-		defer redisPoolMux.Unlock()
+	if poolHandler == nil || poolHandler.IsClosed() {
 
-		if redisPool == nil {
+		poolMux.Lock()
 
-			cacheConfig := ConfigCacheGetRedis()
+		defer poolMux.Unlock()
+
+		if poolHandler == nil {
+
+			cacheConfig := ConfigCacheGetRedisWithConn(b.Persistent)
 
 			if cacheConfig.PoolMinActive == 0 {
 				cacheConfig.PoolMinActive = 1
 			}
 
-			redisPool = pools.NewResourcePool(func() (pools.Resource, error) {
-				c, serverIndex, err := b.dail(0)
+            poolHandler = pools.NewResourcePool(func() (pools.Resource, error) {
+				c, serverIndex, err := b.dial(0)
 				return ResourceConn{Conn: c, serverIndex: serverIndex}, err
 			}, cacheConfig.PoolMinActive, cacheConfig.PoolMaxActive, time.Duration(cacheConfig.PoolIdleTimeout)*time.Millisecond)
+
+            daoPool.Set(poolHandler, b.Persistent)
+
 		}
 	}
-	if redisPool != nil {
+	if poolHandler != nil {
 		var r pools.Resource
 		var err error
 		ctx := context.TODO()
 
-		r, err = redisPool.Get(ctx)
+		r, err = poolHandler.Get(ctx)
 
 		if err != nil {
 			UtilLogErrorf("redis get connection err:%s", err.Error())
@@ -118,9 +155,9 @@ func (b *DaoRedis) InitRedisPool() (pools.Resource, error) {
 				//连接断开，重新打开
 				var conn redis.Conn
 				var serverIndex int
-				conn, serverIndex, err = b.dail(rc.serverIndex + 1)
+				conn, serverIndex, err = b.dial(rc.serverIndex + 1)
 				if err != nil {
-					redisPool.Put(r)
+                    poolHandler.Put(r)
 					UtilLogErrorf("redis redail connection err:%s", err.Error())
 					return nil, err
 				} else {
@@ -132,6 +169,7 @@ func (b *DaoRedis) InitRedisPool() (pools.Resource, error) {
 		return r, err
 	}
 
+
 	UtilLogError("redis pool is null")
 
 	return ResourceConn{}, errors.New("redis pool is null")
@@ -139,7 +177,7 @@ func (b *DaoRedis) InitRedisPool() (pools.Resource, error) {
 
 func (b *DaoRedis) getKey(key string) string {
 
-	cacheConfig := ConfigCacheGetRedis()
+	cacheConfig := ConfigCacheGetRedisWithConn(b.Persistent)
 
 	prefixRedis := cacheConfig.Prefix
 
@@ -159,7 +197,7 @@ func (b *DaoRedis) doSet(cmd string, key string, value interface{}, expire int, 
 
 	key = b.getKey(key)
 
-	defer redisPool.Put(redisResource)
+	defer daoPool.Put(redisResource, b.Persistent)
 
 	redisClient := redisResource.(ResourceConn)
 
@@ -171,7 +209,7 @@ func (b *DaoRedis) doSet(cmd string, key string, value interface{}, expire int, 
 	}
 
 	if expire == 0 {
-		cacheConfig := ConfigCacheGetRedis()
+		cacheConfig := ConfigCacheGetRedisWithConn(b.Persistent)
 
 		expire = cacheConfig.Expire
 	}
@@ -233,7 +271,7 @@ func (b *DaoRedis) doMSet(cmd string, key string, value map[string]interface{}) 
 	if err != nil {
 		return nil, err
 	}
-	defer redisPool.Put(redisResource)
+	defer daoPool.Put(redisResource, b.Persistent)
 
 	var args []interface{}
 
@@ -258,7 +296,7 @@ func (b *DaoRedis) doMSet(cmd string, key string, value map[string]interface{}) 
 	}
 	/*
 		if expire == 0 {
-			cacheConfig := ConfigCacheGetRedis()
+			cacheConfig := ConfigCacheGetRedisWithConn(b.Persistent)()
 
 			expire = cacheConfig.Expire
 		}
@@ -286,7 +324,7 @@ func (b *DaoRedis) doGet(cmd string, key string, value interface{}, fields ...st
 	if err != nil {
 		return false, err
 	}
-	defer redisPool.Put(redisResource)
+	defer daoPool.Put(redisResource, b.Persistent)
 
 	redisClient := redisResource.(ResourceConn)
 
@@ -358,7 +396,7 @@ func (b *DaoRedis) doMGet(cmd string, args []interface{}, value interface{}) err
 	if err != nil {
 		return err
 	}
-	defer redisPool.Put(redisResource)
+	defer daoPool.Put(redisResource, b.Persistent)
 
 	redisClient := redisResource.(ResourceConn)
 
@@ -405,7 +443,7 @@ func (b *DaoRedis) doMGet(cmd string, args []interface{}, value []interface{}) e
 	if err != nil {
 		return err
 	}
-	defer redisPool.Put(redisResource)
+	defer daoPool.Put()()(redisResource)
 
 	redisClient := redisResource.(ResourceConn)
 
@@ -452,7 +490,7 @@ func (b *DaoRedis) doIncr(cmd string, key string, value int, expire int, fields 
 	if err != nil {
 		return 0, false
 	}
-	defer redisPool.Put(redisResource)
+	defer daoPool.Put(redisResource, b.Persistent)
 
 	redisClient := redisResource.(ResourceConn)
 
@@ -484,7 +522,7 @@ func (b *DaoRedis) doIncr(cmd string, key string, value int, expire int, fields 
 	}
 
 	if expire == 0 {
-		cacheConfig := ConfigCacheGetRedis()
+		cacheConfig := ConfigCacheGetRedisWithConn(b.Persistent)
 
 		expire = cacheConfig.Expire
 	}
@@ -506,7 +544,7 @@ func (b *DaoRedis) doDel(cmd string, data ...interface{}) error {
 	if err != nil {
 		return err
 	}
-	defer redisPool.Put(redisResource)
+	defer daoPool.Put(redisResource, b.Persistent)
 
 	redisClient := redisResource.(ResourceConn)
 
@@ -558,7 +596,7 @@ func (b *DaoRedis) Expire(key string, expire int) bool {
 		return false
 	}
 	key = b.getKey(key)
-	defer redisPool.Put(redisResource)
+	defer daoPool.Put(redisResource, b.Persistent)
 	redisClient := redisResource.(ResourceConn)
 	_, err = redisClient.Do("EXPIRE", key, expire)
 	if err != nil {
@@ -718,7 +756,7 @@ func (b *DaoRedis) HLen(key string, data *int) bool {
 	if err != nil {
 		return false
 	}
-	defer redisPool.Put(redisResource)
+	defer daoPool.Put(redisResource, b.Persistent)
 
 	redisClient := redisResource.(ResourceConn)
 
@@ -770,7 +808,7 @@ func (b *DaoRedis) ZAdd(key string, score int, data interface{}) bool {
 	if err != nil {
 		return false
 	}
-	defer redisPool.Put(redisResource)
+	defer daoPool.Put(redisResource, b.Persistent)
 
 	redisClient := redisResource.(ResourceConn)
 
@@ -858,7 +896,7 @@ func (b *DaoRedis) LLen(key string) (int64,error) {
 	if err != nil {
 		return 0, err
 	}
-	defer redisPool.Put(redisResource)
+	defer daoPool.Put(redisResource, b.Persistent)
 
 	redisClient := redisResource.(ResourceConn)
 	key = b.getKey(key)
@@ -895,7 +933,7 @@ func (b *DaoRedis) LREM(key string, count int, data interface{}) int {
 	if err != nil {
 		return 0
 	}
-	defer redisPool.Put(redisResource)
+	defer daoPool.Put(redisResource, b.Persistent)
 
 	redisClient := redisResource.(ResourceConn)
 
@@ -995,7 +1033,7 @@ func (b *DaoRedis) pipeDoGet(cmd string, args [][]interface{}, value []interface
 	if err != nil {
 		return err
 	}
-	defer redisPool.Put(redisResource)
+	defer daoPool.Put(redisResource, b.Persistent)
 
 	redisClient := redisResource.(ResourceConn)
 

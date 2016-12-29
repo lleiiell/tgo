@@ -12,6 +12,7 @@ var (
 
 type ConfigCache struct {
 	Redis ConfigCacheRedis
+	RedisP ConfigCacheRedis // 持久化Redis
 }
 
 type ConfigCacheRedis struct {
@@ -54,7 +55,7 @@ func configCacheClear() {
 }
 
 func configCacheGetDefault() *ConfigCache {
-	return &ConfigCache{Redis: ConfigCacheRedis{[]string{"ip:port"}, "prefix", 604800, 1000, 1000, 1000, 10, 100, 180000, 2}}
+	return &ConfigCache{Redis: ConfigCacheRedis{[]string{"ip:port"}, "prefix", 604800, 1000, 1000, 1000, 10, 100, 180000, 2}, RedisP: ConfigCacheRedis{[]string{"ip:port"}, "prefix", 604800, 1000, 1000, 1000, 10, 100, 180000, 2}}
 }
 
 func ConfigCacheGetRedis() *ConfigCacheRedis {
@@ -67,6 +68,20 @@ func ConfigCacheGetRedis() *ConfigCacheRedis {
 		//log
 		redisConfig = configCacheGetDefault().Redis
 	}
+
+	return &redisConfig
+}
+
+func ConfigCacheGetRedisWithConn(persistent bool) *ConfigCacheRedis {
+
+	configCacheGet()
+
+    var redisConfig ConfigCacheRedis
+    if !persistent {
+        redisConfig = cacheConfig.Redis
+    } else {
+        redisConfig = cacheConfig.RedisP
+    }
 
 	return &redisConfig
 }
