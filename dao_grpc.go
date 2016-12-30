@@ -90,7 +90,7 @@ func (dao *DaoGRPC) GetConn() (*grpc.ClientConn, error) {
 		return nil, err
 	}
 	//http2 共用同一链接，所以拿到即可还回
-	//grpcPool.ReturnObject(conn)
+	grpcPool.ReturnObject(conn)
 
 	if conn == nil {
 		UtilLogErrorf("get grpc conn from pool failed: conn is nil")
@@ -111,10 +111,10 @@ func (dao *DaoGRPC) GetConn() (*grpc.ClientConn, error) {
 }
 
 func (dao *DaoGRPC) CloseConn(conn *grpc.ClientConn) error {
-	grpcPool, ok := grpcPoolMap[dao.ServerName]
+	/*grpcPool, ok := grpcPoolMap[dao.ServerName]
 
 	if !ok {
 		return errors.New("grpc pool is not exist")
-	}
-	return grpcPool.ReturnObject(conn)
+	}*/
+	return nil //grpcPool.ReturnObject(conn)
 }

@@ -40,6 +40,7 @@ func BenchmarkDaoGRPC_GetConn(b *testing.B) {
 			daoGrpc.CloseConn(conn)
 		}
 	}
+
 }
 
 /*
