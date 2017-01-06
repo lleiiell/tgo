@@ -74,8 +74,9 @@ func (m *DaoMongo) GetSession() (*mgo.Session, string, error) {
 	}
 
 	if sessionMongo != nil {
-		m.SetMode(sessionMongo, configMongo.Read_option)
-		return sessionMongo.Clone(), configMongo.DbName, nil
+		clone := sessionMongo.Clone()
+		m.SetMode(clone, configMongo.Read_option)
+		return clone, configMongo.DbName, nil
 	}
 
 	//session.SetSocketTimeout(time.Duration(configMongo.Timeout) * time.Millisecond)
