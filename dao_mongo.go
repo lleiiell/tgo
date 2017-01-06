@@ -117,7 +117,9 @@ func (m *DaoMongo) SetMode(session *mgo.Session, dft string) {
 		mode = mgo.Strong
 	}
 
-	session.SetMode(mode, m.Refresh)
+	if session.Mode() != mode {
+		session.SetMode(mode, m.Refresh)
+	}
 }
 
 func (m *DaoMongo) GetId() (int64, error) {
